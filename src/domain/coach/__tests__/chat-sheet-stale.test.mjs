@@ -21,6 +21,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const sheet = readFileSync(path.join(here, '../../../components/forge/CoachChatSheet.tsx'), 'utf8');
 /* The build is the engine's since Holt Listens HL-10 S4b — the race and concern checks read it there. */
 const build = readFileSync(path.join(here, '../engine/build.ts'), 'utf8').replace(/\r\n/g, '\n');
+/* …and the typed turn (process / respondTo, with athleteFacts) since HL-10 S3. */
+const turn = readFileSync(path.join(here, '../engine/turn.ts'), 'utf8').replace(/\r\n/g, '\n');
 
 const fn = (name) => {
   const start = sheet.indexOf(`function ${name}(`);
@@ -47,14 +49,15 @@ test('⚠ only the newest card has buttons; older ones say so instead of acting 
 });
 
 test('⚠ a new request starts from the athlete, not from the last request', () => {
-  assert.match(sheet, /const athleteFacts = \(c: ChatState\): ChatState =>/);
+  assert.match(turn, /export const athleteFacts = \(c: ChatState\): ChatState =>/);
   // Both doors — the tapped opener and the typed one — and the shelf.
   // The tapped opener names the request first (so "Replace it" can carry it on — QA R2-F8); the typed one inline.
   assert.match(sheet, /const request: ChatState = \{ \.\.\.athleteFacts\(constraints\), \.\.\.opener\.patch \};/);
   assert.match(sheet, /advance\(request, opener\.mode\)/);
-  assert.equal((sheet.match(/advance\(\{ \.\.\.athleteFacts\(constraints\), \.\.\.opener\.patch(, \.\.\.\(gear \?\? \{\}\))? \}, opener\.mode\)/g) ?? []).length, 1);
+  assert.equal((turn.match(/advance\(refs, port, sink, hooks\.build, \{ \.\.\.athleteFacts\(refs\.constraints\), \.\.\.opener\.patch(, \.\.\.\(gear \?\? \{\}\))? \}, opener\.mode\)/g) ?? []).length, 1);
   assert.match(sheet, /advance\(athleteFacts\(constraints\), 'pick'\)/);
   assert.doesNotMatch(sheet, /advance\(\{ \.\.\.constraints, \.\.\.opener\.patch \}/);
+  assert.doesNotMatch(turn, /\{ \.\.\.refs\.constraints, \.\.\.opener\.patch \}/);
 });
 
 test('⚠ a race the athlete asked for is built, and the concern is said once with the suggestion as a tap', () => {
@@ -74,7 +77,11 @@ test('⚠ B-D10 (AI audit 11-16) — the wizard builds the race the chat builds,
 test('⚠ QA R2-F8 — a request interrupted by the active-program question is kept for "Replace it"', () => {
   // Each build path that can stop at `guardActiveProgram` puts the request in state FIRST, because the
   // "Replace it" chip continues from `constraints` — a typed build used to come back as "What's the goal?".
-  const guarded = [...sheet.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(request\)/g)]; // the request rides along since QA holt-19
+  const guarded = [
+    ...sheet.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(request\)/g), // the request rides along since QA holt-19
+    // the typed sentence is the engine's since HL-10 S3
+    ...turn.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(refs, port, sink, request\)/g),
+  ];
   assert.equal(guarded.length, 3, 'typed sentence, tapped opener, shelf-to-build');
   for (const m of guarded) assert.match(m[1], /setConstraints\(request\);/);
   assert.match(sheet, /if \(chip\.label === 'Replace it'\) \{\s*say\(\{ kind: 'me', text: chip\.label \}\);\s*void advance\(constraints, mode \?\? 'program'(, '[^']*')?\);/);

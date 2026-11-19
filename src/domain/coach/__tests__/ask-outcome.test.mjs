@@ -93,9 +93,11 @@ test('no allowance at all is Premium AI not being on — not "used", and no rese
 
 test('⚠ the sheet answers out_of_credits with the credit line in BOTH AI paths, and the Free line only at the gate', () => {
   const ask = between('const askAloud = async', 'const onChip = (chip');
-  const respond = between('const respondTo = async', 'const process = (text');
+  // respondTo is the engine's since Holt Listens HL-10 S3 (the sheet's creditsLine arrives as a hook).
+  const turn = readFileSync(path.join(here, '../engine/turn.ts'), 'utf8');
+  const respond = turn.slice(turn.indexOf('export async function respondTo('), turn.indexOf('export function buildingLine('));
   for (const [name, src] of [['askAloud', ask], ['respondTo', respond]]) {
-    assert.match(src, /case 'out_of_credits':[\s\S]{0,200}await creditsLine\(r, /, `${name} must use the credit line`);
+    assert.match(src, /case 'out_of_credits':[\s\S]{0,200}await (hooks\.)?creditsLine\(r, /, `${name} must use the credit line`);
     assert.doesNotMatch(src, /pick\('allowance_program'\)/, `${name} must not say the free-block line`);
   }
   // A tapped search is weighed as a search.

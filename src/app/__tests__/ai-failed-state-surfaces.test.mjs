@@ -82,13 +82,14 @@ const SURFACES = [
   [
     'src/components/forge/CoachChatSheet.tsx',
     [
-      /'The connection dropped before I heard back\.',\n\s*r\.refunded,\n\s*\),/,
       // UX-1 (Sprint 3b): the kitchen failing is the chat's failure card; "Not charged." rides as its flag.
       /\{ kind: 'error', text: kitchenError\(r\), sub: '', action: '', \.\.\.\(r\.refunded \? \{ notCharged: true as const \} : \{\}\) \},\n\s*\{ kind: 'chips'/,
       /if \(r\.kind !== 'ok'\) return void say\(\{ kind: 'holt', text: withNotCharged\(kitchenError\(r\), r\.refunded\) \}\);/,
       /if \(r\.kind !== 'ok'\) return void say\(\{ kind: 'holt', text: withNotCharged\(attachErrorLine\(kind, r\.kind\), r\.refunded\) \}\);/,
     ],
   ],
+  // The typed turn (respondTo's "couldn't reach my notes") is the engine's since Holt Listens HL-10 S3.
+  ['src/domain/coach/engine/turn.ts', [/'The connection dropped before I heard back\.',\n\s*r\.refunded,\n\s*\),/]],
   // The build (coach-author's fallback) is the engine's since Holt Listens HL-10 S4b.
   ['src/domain/coach/engine/build.ts', [/holt\.fellBack = withNotCharged\(authorFallbackLine\(a\), a\.refunded\)/]],
 ];

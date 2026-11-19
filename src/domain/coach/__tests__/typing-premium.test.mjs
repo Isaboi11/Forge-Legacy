@@ -20,6 +20,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const sheet = readFileSync(path.join(here, '../../../components/forge/CoachChatSheet.tsx'), 'utf8');
 /* The typed edit flow moved into the engine (Holt Listens HL-10 S2) — same code, reads/writes through the port. */
 const engineEdit = readFileSync(path.join(here, '../engine/edit.ts'), 'utf8');
+/* …and the typed turn (understand / process / respondTo) since HL-10 S3. */
+const turn = readFileSync(path.join(here, '../engine/turn.ts'), 'utf8').replace(/\r\n/g, '\n');
+const respondOf = () => turn.slice(turn.indexOf('export async function respondTo('), turn.indexOf('export function buildingLine('));
 const finishOf = () => engineEdit.slice(engineEdit.indexOf('export async function finishTypedEdit('), engineEdit.indexOf('export function clearEdit('));
 
 test('a day focus said in words becomes the same focus the taps make', () => {
@@ -48,22 +51,23 @@ test('⚠ the public switch stays off; the composer shows for Premium AI only', 
 test('⚠ a Premium AI sentence reaches the model, and the broad word list no longer blocks swaps there', () => {
   // Sprint 4a (PO 11-18): coach-interpret is retired from this app — every typed line goes to Holt's chat with the caps.
   assert.doesNotMatch(sheet, /interpretTyped\(/);
-  assert.match(sheet, /return askAloud\(text, history, q, \{ building: buildingLine\(q, m\) \}\);/);
-  assert.match(sheet, /if \(premiumAi\) \{\s*void understand\(text\);/);
-  assert.match(sheet, /if \(!premiumAi && isMedical\(text\)\)/);
+  assert.doesNotMatch(turn, /interpretTyped\(/);
+  assert.match(turn, /return hooks\.askAloud\(text, history, q, \{ building: buildingLine\(refs, q, m\) \}\);/);
+  assert.match(turn, /if \(hooks\.premiumAi\) \{\s*void understand\(refs, port, sink, hooks, text\);/);
+  assert.match(turn, /if \(!hooks\.premiumAi && isMedical\(text\)\)/);
   // Every route the function can return has an answer — an unhandled one would be silence.
-  const understand = sheet.slice(sheet.indexOf('const respondTo = async'), sheet.indexOf('const process = (text'));
+  const understand = respondOf();
   for (const route of ['crisis', 'urgent', 'care', 'medical', 'out_of_credits', 'offline', 'unclear', 'answer', 'door', 'patch'])
     assert.match(understand, new RegExp(`case '${route}':`), route);
 });
 
 test('⚠ a sentence that opens a build passes the same allowance gate as the door, from the athlete facts', () => {
-  const understand = sheet.slice(sheet.indexOf('const respondTo = async'), sheet.indexOf('const process = (text'));
-  assert.match(understand, /if \(opens === 'day' && !guard\('holt_days_per_month'\)\)/);
+  const understand = respondOf();
+  assert.match(understand, /if \(opens === 'day' && !hooks\.guard\('holt_days_per_month'\)\)/);
   // A block asks by its length (MA4-D5): a typed one-week deload asks for a training week.
-  assert.match(understand, /if \(opens === 'program' && blockDoorRefuses\(patch\.weeks\)\) return;/);
-  assert.match(understand, /const request: ChatState = \{ \.\.\.athleteFacts\(constraints\), \.\.\.patch \};/);
-  assert.match(understand, /advance\(request, opens\)/);
+  assert.match(understand, /if \(opens === 'program' && hooks\.blockDoorRefuses\(patch\.weeks\)\) return;/);
+  assert.match(understand, /const request: ChatState = \{ \.\.\.athleteFacts\(refs\.constraints\), \.\.\.patch \};/);
+  assert.match(understand, /advance\(refs, port, sink, hooks\.build, request, opens\)/);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,7 +132,7 @@ test('⚠ conversation memory is this conversation, eight turns, into both AI jo
   assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(rewound\.current \?\? t\);/);
   assert.match(readFileSync(path.join(here, '../chat-history.ts'), 'utf8'), /export const CHAT_HISTORY_TURNS = 8;/);
   // Sprint 4a: the notes are read before the ask (the build's coach-author write carries them as `heardNotes`).
-  assert.match(sheet, /await within\(ASK_CONTEXT_MS, loadNotes\(\), \[\]\);/);
+  assert.match(turn, /await within\(ASK_CONTEXT_MS, hooks\.loadNotes\(\), \[\]\);/);
   assert.match(sheet, /streamCoachAsk\(\s*text,\s*history,\s*context,/);
 });
 

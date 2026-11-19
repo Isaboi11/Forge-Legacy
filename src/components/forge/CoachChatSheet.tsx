@@ -36,6 +36,14 @@ import { livePort } from '@/data/engine-port-live';
 import { ACTIVE_LOOKUP_TIMEOUT_MS, guardActiveProgram as engineGuard, offerProgramSession as engineOffer } from '@/domain/coach/engine/guards';
 import { freshRefs, type Built, type EngineRefs, type EngineSink } from '@/domain/coach/engine/types';
 import {
+  alsoSaid as engineAlsoSaid,
+  athleteFacts,
+  beginRequest as engineBeginRequest,
+  process as engineProcess,
+  respondTo as engineRespondTo,
+  type TurnHooks,
+} from '@/domain/coach/engine/turn';
+import {
   advance as engineAdvance,
   sayHoltRefused as engineSayHoltRefused,
   type BuildHooks,
@@ -43,7 +51,6 @@ import {
 import {
   beginEdit as engineBeginEdit,
   clearEdit,
-  editByWords as engineEditByWords,
   finishTypedEdit as engineFinishTypedEdit,
   stepEdit as engineStepEdit,
   type EditHooks,
@@ -67,7 +74,7 @@ import { useCapGates, useEntitlementState, useNutritionAccess, usePremiumAi } fr
 import { holtBlockDoor, holtKeepOnce, holtKeepVerdict } from '@/domain/entitlement/caps-core';
 /* AI Road to 10 Sprint 4a (PO 11-18): coach-interpret is retired from this app — every typed line goes to Holt's chat
    (coach-ask, caps `actions_v1`). Only the balance read and the step types stay from that module. */
-import { fetchCoachAiBalance, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
+import { fetchCoachAiBalance, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { HoltActionCard } from '@/components/forge/HoltActionCard';
 import { HoltStatusLine, holtStatusText } from '@/components/forge/HoltStatusLine';
 import { useChatRecap } from '@/components/forge/useChatRecap';
@@ -103,7 +110,7 @@ import { kitchenLeftLive, kitchenPantryLive } from '@/data/holt-kitchen-live';
 import { askKitchenLive, kitchenRulesLive, recentKitchenDishesLive, rememberKitchenDishesLive } from '@/data/coach-kitchen-live';
 import { addEntries } from '@/data/nutrition-live';
 import { dietAvoid, dishCards, dishLine, type DishCard } from '@/domain/nutrition/kitchen-cards';
-import { isMakeRequest, kitchenError, rotationLeanToday, type KitchenNudge } from '@/domain/nutrition/kitchen-dishes';
+import { kitchenError, rotationLeanToday, type KitchenNudge } from '@/domain/nutrition/kitchen-dishes';
 import { localToday } from '@/domain/nutrition/day';
 import { stashRecipeDraft } from '@/lib/recipe-draft-stash';
 import { readImportPhoto } from '@/data/import-photo-read';
@@ -117,18 +124,14 @@ import {
   KITCHEN_CARE_STOP,
   KITCHEN_INTRO,
   KITCHEN_MAKE_SEED,
-  KITCHEN_UNCLEAR,
-  KITCHEN_UNCLEAR_DOORS,
   greetKitchen,
   kitchenContext,
   kitchenDoorsFor,
-  kitchenWantsTraining,
   KITCHEN_MENU,
   replyOffersOnline,
   medicalStopIsDietitian,
 } from '@/domain/coach/kitchen';
 import { buildAskContext } from '@/domain/coach/ask-context';
-import { resolveAvoid } from '@/domain/coach/avoid';
 import { useDictation } from '@/hooks/useDictation';
 import { toTemplateExercises } from '@/lib/workout-template-rows';
 import { saveTemplate } from '@/data/templates-live';
@@ -162,10 +165,6 @@ import {
   withoutStaleHome,
   type GreetingSlot,
   TYPING_ENABLED,
-  interpret,
-  focusSaid,
-  looksLikeQuestion,
-  isMedical,
   LEVEL_CHIPS,
   ROOM_CHIPS,
   isRoom,
@@ -193,15 +192,14 @@ import {
   type Room,
   type Turn,
 } from '@/domain/coach/chat-core';
-import { typedEquipment } from '@/domain/coach/typed-equipment';
-import { MINOR_AGE, medicalRoute } from '@/domain/coach/medical-routing';
+import { MINOR_AGE } from '@/domain/coach/medical-routing';
 import { askHistory, markStopped, summaryHistory } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
 import { takeCoachAskSeed } from '@/lib/coach-ask-seed';
 import type { CoachIntent } from '@/hooks/useCoachDoor';
 import { useProfile } from '@/lib/profile';
-import { PICKER_DB, resolveExerciseName } from '@/domain/exercise-picker/data';
+import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { checkActiveProgram, fetchActiveProgram } from '@/data/programs-live';
 import { fetchCoachProfile } from '@/data/coach-profile-live';
@@ -643,13 +641,9 @@ export function CoachChatSheet({
   /* Holt's notes on them (CA-D2), as last read by `loadNotes` — kept here so the build can send them. */
   /* The stop helpers are defined below `advance`; it reaches them through this, filled in by an effect. */
   const stopFor = useRef<(route: 'crisis' | 'urgent' | 'care' | 'medical', text: string) => void>(() => undefined);
-  const beginRequest = (words: string[]) => {
-    engine.current.typed = words;
-    engine.current.goalGuessed = false;
-  };
-  const alsoSaid = (text: string) => {
-    if (engine.current.typed[engine.current.typed.length - 1] !== text) engine.current.typed = [...engine.current.typed, text];
-  };
+  /* The request's own words live in the engine (`engine/turn.ts`, HL-10 S3). */
+  const beginRequest = (words: string[]) => engineBeginRequest(engine.current, words);
+  const alsoSaid = (text: string) => engineAlsoSaid(engine.current, text);
 
   const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...stamped(turns)]), []);
   /** What the engine draws through: Holt's turns and the busy state. */
@@ -871,10 +865,6 @@ export function CoachChatSheet({
    * is how "What should I train today?" after a marathon build came back as *Bench 1×1* (stress test
    * 2026-09-21): the race goal was still set, so the day was prescribed as race work.
    */
-  const athleteFacts = (c: ChatState): ChatState => ({
-    ...(c.experience ? { experience: c.experience } : {}),
-    ...(c.ownedEquipment ? { ownedEquipment: c.ownedEquipment } : {}),
-  });
 
   const newChat = () => {
     void endThread();
@@ -1022,7 +1012,6 @@ export function CoachChatSheet({
   const beginEdit = () => engineBeginEdit(engine.current, port, sink, editHooks());
   /** One tap inside the flow. Each step narrows and asks the next question. */
   const stepEdit = (pickStep: NonNullable<Chip['edit']>) => engineStepEdit(engine.current, port, sink, editHooks(), pickStep);
-  const editByWords = (wanted: EditIntent, said?: string) => engineEditByWords(engine.current, port, sink, editHooks(), wanted, said);
   const finishTypedEdit = (chip: Chip) => engineFinishTypedEdit(engine.current, port, sink, editHooks(), chip);
 
   /*
@@ -2196,254 +2185,42 @@ export function CoachChatSheet({
     engine.current.heardNotes = notesRef.current;
     return notesRef.current;
   };
-  /** One understood step — a single reply, or one part of a message that asked for several things. */
-  const respondTo = async (r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) => {
-    switch (r.kind) {
-      case 'crisis':
-        return crisisStop(text);
-      case 'urgent':
-        return urgentStop(text);
-      case 'care':
-        return careStop(text);
-      case 'medical':
-        return medicalStop(text);
-      case 'out_of_credits':
-        /* The same line as a question at the cap (C-D1) — never the Free plan's `allowance_program`. */
-        return say({ kind: 'holt', text: await creditsLine(r, false) });
-      case 'offline':
-        /* Which way it failed (Sprint 1, P-G3): his end, a clock, or the connection — and "Not charged." when the
-           server gave the credit back. */
-        return say({
-          kind: 'error',
-          text: "I couldn't reach my notes just then.",
-          sub: withNotCharged(
-            r.timedOut
-              ? 'It took too long, so I stopped waiting.'
-              : r.unavailable
-                ? 'Something broke on my end, not your connection.'
-                : 'The connection dropped before I heard back.',
-            r.refunded,
-          ),
-          action: 'Tap an answer, or send it again in a moment.',
-        });
-      case 'unclear':
-        /* With a question on the table, "didn't catch that" and the choices again is right. With nothing on
-           the table (an emoji, "ok", a stray line) it reads as a coach who is not listening — he offers the
-           doors instead (live run 2026-09-22: 23 small-talk lines got "didn't catch that"). */
-        if (q) {
-          say({ kind: 'holt', text: pick('not_understood') }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
-          return;
-        }
-        say(
-          kitchen
-            ? { kind: 'holt', text: KITCHEN_UNCLEAR }
-            : { kind: 'holt', text: "I'm here. What are we working on?" },
-          kitchen
-            ? { kind: 'chips', chips: KITCHEN_UNCLEAR_DOORS.map((d) => ({ label: d.label, patch: {}, goTo: d.goTo })) }
-            : { kind: 'chips', chips: OPENERS.slice(0, 4).map((label) => ({ label, patch: {} })) },
-        );
-        return;
-      /* A question mid-conversation is answered, and the question that was on the table comes back —
-         asking "what's RPE?" while he wants to know your days should not lose the build. */
-      case 'answer':
-        say({ kind: 'holt', text: r.text });
-        if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
-        return;
-      /* A door the app already has. Opened exactly as the matching opener chip opens it, minus the echo —
-         the athlete's own sentence is already in the thread. */
-      case 'door':
-        /* "Swap bench for dumbbell press on Monday" carries the change itself — resolve and confirm it
-           rather than walking them through five taps to say what they already said. */
-        /* A draft Holt just wrote is changed by writing it again with this message added — "add one more
-           triceps movement" is about the card on screen, not about a program they are running. */
-        if (r.to === 'edit' && built && engine.current.typed.length && mode && mode !== 'pick') {
-          alsoSaid(text);
-          return void advance(constraints, mode);
-        }
-        if (r.to === 'edit' && r.edit) return editByWords(r.edit, text);
-        /* "Give me something for today, keep it light, mostly machines" opens the door with nothing the
-           form could hold — and everything Holt needs. The door resets the request; the sentence is put
-           back so he still reads it when it is time to build. */
-        if (r.to === 'build' || r.to === 'build_day') setTimeout(() => alsoSaid(text), 0);
-        return tapChip(
-          {
-            label:
-              r.to === 'edit'
-                ? 'Change my program'
-                : r.to === 'import'
-                  ? "I've got a program already"
-                  : r.to === 'build'
-                    ? 'Build me something'
-                    : r.to === 'build_day'
-                      ? 'What should I train today?'
-                      : 'Which one should I pick?',
-            patch: {},
-          },
-          false,
-        );
-      case 'patch': {
-        /* The model hands back the athlete's own words for a day focus; the engine needs a `DayFocus`. */
-        const { dayFocus: said, avoid, ...rest } = r.patch as Partial<ChatState> & { dayFocus?: unknown; avoid?: unknown };
-        /* What they said to leave out is removed by the ENGINE, so Holt's "no lunges" is a fact on the card. */
-        const avoidKeys = Array.isArray(avoid) ? resolveAvoid(avoid.filter((x): x is string => typeof x === 'string'), PICKER_DB) : [];
-        if (avoidKeys.length) {
-          (rest as Partial<ChatState>).excludeExercises = [...new Set([...(constraints.excludeExercises ?? []), ...avoidKeys])];
-        }
-        /* …and how they said to divide it — "upper chest", "two tricep workouts and the rest chest" — is
-           read from their own sentence, because the patch has no field for either (`focusSaid`). */
-        /* A focus the model heard and the parser cannot place ("forearms and neck") must not be asked for
-           again: Holt reads the sentence itself, and full body is only what the rulebook would fall back to. */
-        const focus =
-          typeof said === 'string' ? focusSaid(said, text) ?? ({ kind: 'split', split: 'full_body' } as const) : null;
-        /* QA holtai-04 — the model's patch has no equipment field, so "dumbbells only" arrived as a bare
-           `home` and built from an empty home gym. The kit named in their own sentence rides along. */
-        const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}), ...(typedEquipment(text) ?? {}) };
-        /* "Run twice a week and lift three times" is THEIR split, and the race rulebook does not re-cut it
-           (`CoachConstraints.splitAsSaid`). Only ever set from words — no tap carries a lifting-day count. */
-        if (typeof patch.liftDays === 'number' && patch.liftDays > 0) patch.splitAsSaid = true;
-        /* A room typed in answer to "where?", or the first one they have ever named, is kept. Any other
-           is this request's alone: "I'm at a hotel gym today" must not become where they train. */
-        if (isRoom(patch.environment) && (q?.id === 'where' || engine.current.room == null)) keepRoom(patch.environment);
-        if (mode) {
-          if (r.say) say({ kind: 'holt', text: r.say });
-          alsoSaid(text);
-          return void advance({ ...constraints, ...patch }, m);
-        }
-        const opens: ChatMode = focus ? 'day' : 'program';
-        if (opens === 'day' && !guard('holt_days_per_month')) return say({ kind: 'holt', text: pick('allowance_day') });
-        /* "Build me a one-week deload" says its length, so it asks for the training week it will spend (MA4-D5). */
-        if (opens === 'program' && blockDoorRefuses(patch.weeks)) return;
-        setMode(opens);
-        beginRequest([text]);
-        const request: ChatState = { ...athleteFacts(constraints), ...patch };
-        /* ⚠ SAVED BEFORE THE ACTIVE-PROGRAM QUESTION (QA R2-F8). The guard can stop here to ask about the
-           block they already run, and "Replace it" carries on from `constraints` — so the parsed request has
-           to be in state first, or a fully typed build comes back as "What's the goal?". */
-        setConstraints(request);
-        if (opens === 'program' && !(await guardActiveProgram(request))) return;
-        /* ⚠ THE MODEL'S LINE WAITS FOR THE GUARDS (QA holtai-22). Said first, "Let's replace that plan." sat
-           above "You've already got X running…" — Holt announcing a replacement nobody had agreed to — and
-           above the allowance stop it contradicted. It is only true once the build is actually going ahead. */
-        if (r.say) say({ kind: 'holt', text: r.say });
-        return void advance(request, opens);
-      }
-    }
-  };
-
-  /**
-   * ══ PREMIUM AI: EVERY TYPED LINE GOES TO HOLT'S CHAT (AI Road to 10 Sprint 4a, CH-3 — PO 11-18) ══
-   *
-   * `coach-interpret` used to read every line that was not a question. Now `coach-ask` reads them all — one brain — and
-   * hands back what the app should do as actions (`actOn`): a build (`propose_program` / `propose_day`) runs the SAME
-   * 'patch' handling a typed request always had, a door the same door, a change the same edit flow, and everything new
-   * is a card. Old phones keep calling coach-interpret, which stays deployed and unchanged.
-   *
-   * The free local matcher still places a typed answer to the question on the table ("4 days") — no model, no credit
-   * (it was interpretTyped's step 1). Anything it cannot place goes to Holt with the build line (`buildingLine`).
+  /*
+   * ══ THE TYPED TURN IS THE ENGINE'S (`engine/turn.ts`, Holt Listens HL-10 S3) ══ — `process`, `understand`,
+   * `respondTo` and `buildingLine`, moved unchanged. What is still the sheet's comes in as `turnHooks()`, read fresh
+   * at each call: the coach-ask stream, the kitchen, the stop cards, the chip router, the Premium gate.
    */
-  const buildingLine = (q: ReturnType<typeof nextQuestion>, m: ChatMode): string | null => {
-    if (!mode) return null;
-    const settled = Object.fromEntries(
-      Object.entries(constraints).filter(
-        ([k, v]) => SETTLED_KEYS.has(k) && v != null && !(Array.isArray(v) && v.length === 0),
-      ),
-    );
-    return [
-      m === 'day' ? 'Building ONE session, not a program.' : 'Building a full program.',
-      q ? `Holt just asked: "${q.ask}"` : null,
-      q?.chips.length ? `Offered answers: ${q.chips.map((c) => c.label).join(' · ')}` : null,
-      Object.keys(settled).length ? `Already settled, do not re-fill: ${JSON.stringify(settled)}` : null,
-    ]
-      .filter(Boolean)
-      .join(' ');
-  };
+  const turnHooks = (): TurnHooks => ({
+    premiumAi,
+    nutritionAccess,
+    kitchen,
+    edit: editHooks(),
+    build: buildHooks,
+    setMode,
+    setConstraints,
+    tapChip: (chip, echo) => tapChip(chip, echo),
+    guard,
+    blockDoorRefuses,
+    keepRoom,
+    creditsLine,
+    loadNotes,
+    history: () => historyFrom(thread),
+    askAloud,
+    runKitchen,
+    stops: { crisis: crisisStop, urgent: urgentStop, care: careStop, medical: medicalStop },
+  });
+  /** One understood step — a single reply, or one part of a message that asked for several things. */
+  const respondTo = (r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) =>
+    engineRespondTo(engine.current, port, sink, turnHooks(), r, text, q, m);
+
 
   useEffect(() => {
     respondToRef.current = respondTo;
   });
 
-  const understand = async (text: string) => {
-    const m: ChatMode = mode ?? 'program';
-    const q = mode ? nextQuestion(constraints, m) : null;
-    /* This conversation's own recent words (CA-D1) — the current message is not in `thread` yet. */
-    const history = historyFrom(thread);
-    /* What Holt knows about them (CA-D2), read once per sheet — the build's coach-author write carries it
-       (`heardNotes`), and a note he offers that they already have is not offered twice. Bounded (C-D2). */
-    await within(ASK_CONTEXT_MS, loadNotes(), []);
-    if (q && !looksLikeQuestion(text)) {
-      const local = interpret(text, q);
-      if (local) return respondTo({ kind: 'patch', patch: local, say: null, remaining: null }, text, q, m);
-    }
-    return askAloud(text, history, q, { building: buildingLine(q, m) });
-  };
 
   /** Everything that happens to a message after it is on screen. */
-  const process = (text: string) => {
-    /* ⚠ CHECKED BEFORE ANYTHING ELSE, and before any attempt to understand the sentence as training.
-       Someone describing an injury is not answering the question on the table, and treating their knee
-       as an answer to "how many days a week" would be the worst possible reading of it. */
-    /* ⛔ A person in danger first — before the injury check, whose copy is a physio referral. */
-    const danger = medicalRoute(text);
-    if (danger === 'crisis') return void crisisStop(text);
-    if (danger === 'urgent') return void urgentStop(text);
-    if (danger === 'care') return void careStop(text);
-    /*
-     * ══ THE KITCHEN ══ (Chef Holt stress test 2026-09-25). Every stop is code-first here — a condition or
-     * an injury never reaches a model or spends a credit — and every other line goes to `coach-ask`, which
-     * has the recipe book, the diary and the NUT-D4 rules, unless it is plainly about training.
-     */
-    if (kitchen && danger !== 'clear') return void medicalStop(text);
-    if (kitchen && premiumAi && nutritionAccess && isMakeRequest(text)) {
-      void runKitchen(text, null);
-      return;
-    }
-    if (kitchen && premiumAi && !kitchenWantsTraining(text)) {
-      void askAloud(text, historyFrom(thread), null, { kitchen: true });
-      return;
-    }
-    /* The broad word list stops "my shoulder hurts, swap it" — right for a string matcher, wrong once the
-       model reads the sentence (the PO's action-is-fine rule). With Premium AI, `interpretTyped` runs the
-       narrow code guard and the model's own medical routing instead. */
-    if (!premiumAi && isMedical(text)) {
-      medicalStop(text);
-      return;
-    }
-
-    /* QA holtai-04 — kit named outright ("dumbbells only", "just bands and a bench") is read here, free,
-       before any model. It answers the where/gear question on the table without a round trip. */
-    const gear = typedEquipment(text);
-    const onTable = mode ? nextQuestion(constraints, mode) : null;
-    if (gear && (onTable?.id === 'where' || onTable?.id === 'gear')) {
-      void advance({ ...constraints, ...gear }, mode ?? 'program');
-      return;
-    }
-
-    const opener = fromOpener(text);
-    /* The typed path only understands the two openers that START something. Typing "how do I…" is a
-       question for the model, not for a string match — see TYPING_ENABLED. */
-    if (opener?.kind === 'build') {
-      setMode(opener.mode);
-      void advance({ ...athleteFacts(constraints), ...opener.patch, ...(gear ?? {}) }, opener.mode);
-      return;
-    }
-
-    if (premiumAi) {
-      void understand(text);
-      return;
-    }
-
-    const q = nextQuestion(constraints, mode ?? 'program');
-    const said = q ? interpret(text, q) : null;
-    const patch = said || gear ? { ...(said ?? {}), ...(gear ?? {}) } : null;
-    if (!patch) {
-      /* He asks again rather than guessing. A coach who mishears and proceeds is worse than one who
-         checks — and until the model lands, this is the honest edge of what he understands. */
-      say({ kind: 'holt', text: pick('not_understood') });
-      if (q) say({ kind: 'chips', chips: q.chips, ctl: q.ctl });
-      return;
-    }
-    void advance({ ...constraints, ...patch }, mode ?? 'program');
-  };
+  const process = (text: string) => engineProcess(engine.current, port, sink, turnHooks(), text);
 
   /* Drain the queue when Holt finishes. Declared AFTER `process` on purpose: a hook cannot close over a
      const that is declared below it, and react-compiler catches the attempt rather than letting it
@@ -3592,12 +3369,6 @@ type TurnFeedback = { feature: 'chat' | 'kitchen' | 'author'; ref: string; after
 
 /** One coach-ask as Try again and Regenerate send it again (C-D5, CH-6). */
 type AskAgain = { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean; building?: string | null } };
-
-/** The build fields Holt is told are settled mid-build (Sprint 4a — coach-interpret's `known`, minus the long lists). */
-const SETTLED_KEYS: ReadonlySet<string> = new Set([
-  'goal', 'daysPerWeek', 'sessionMinutes', 'environment', 'experience', 'limitations', 'raceDate', 'weeks',
-  'currentWeeklyMi', 'liftDays', 'strengthGoal', 'goalTimeSec', 'focusMuscles', 'dayFocus',
-]);
 
 /** What Holt says when the athlete stopped him before his first word (CH-6) — Try again goes under it. */
 const ASK_STOPPED_LINE = 'Stopped.';

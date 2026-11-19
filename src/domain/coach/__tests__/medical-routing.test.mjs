@@ -441,11 +441,13 @@ test('⛔ R2-F6: "I have an eating disorder" looks like a pantry line — the me
   assert.notEqual(medicalRoute('I have an eating disorder'), 'clear');
   const { readFileSync } = await import('node:fs');
   const root = new URL('../../../../', import.meta.url);
-  const sheet = readFileSync(new URL('src/components/forge/CoachChatSheet.tsx', root), 'utf8');
-  const proc = sheet.slice(sheet.indexOf('const process = (text: string)'));
+  // process() is the engine's since Holt Listens HL-10 S3 — same order, the stops arrive as hooks.
+  const turn = readFileSync(new URL('src/domain/coach/engine/turn.ts', root), 'utf8');
+  const proc = turn.slice(turn.indexOf('export function process('));
   assert.ok(proc.indexOf('medicalRoute(text)') > 0, 'process() runs medicalRoute');
   assert.ok(proc.indexOf('medicalRoute(text)') < proc.indexOf('isMakeRequest(text)'), 'medicalRoute runs before isMakeRequest in the chat');
-  assert.ok(proc.indexOf("kitchen && danger !== 'clear'") < proc.indexOf('isMakeRequest(text)'), 'every kitchen stop returns before the dish writer');
+  assert.ok(proc.indexOf("hooks.kitchen && danger !== 'clear'") > 0, 'the kitchen stop is there');
+  assert.ok(proc.indexOf("hooks.kitchen && danger !== 'clear'") < proc.indexOf('isMakeRequest(text)'), 'every kitchen stop returns before the dish writer');
   const fn = readFileSync(new URL('supabase/functions/coach-kitchen/index.ts', root), 'utf8');
   assert.ok(fn.indexOf('medicalRoute(') > 0 && fn.indexOf('medicalRoute(') < fn.indexOf('api.anthropic.com'), 'coach-kitchen guards before the model');
 });

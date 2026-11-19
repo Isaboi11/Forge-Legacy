@@ -47,6 +47,8 @@ test('the sheet: the day door offers the program session; the running-program qu
   assert.match(guards, /\{ label: JUST_A_WEEK, patch: \{ weeks: 1 \} \}/);
   // every caller hands the guard its request, or a typed "build me a week" would still be refused
   assert.equal((sheet.match(/guardActiveProgram\(\)/g) ?? []).length, 0);
-  assert.ok((sheet.match(/guardActiveProgram\(request\)/g) ?? []).length >= 3);
+  // The typed sentence's guard is the engine's since HL-10 S3.
+  const turn = readFileSync(path.join(here, '../engine/turn.ts'), 'utf8');
+  assert.ok((sheet.match(/guardActiveProgram\(request\)/g) ?? []).length + (turn.match(/guardActiveProgram\(refs, port, sink, request\)/g) ?? []).length >= 3);
   assert.match(sheet, /if \(chip\.trainsProgram\) \{[\s\S]{0,300}writeWorkoutLaunch\(\{ programId \}\)/);
 });

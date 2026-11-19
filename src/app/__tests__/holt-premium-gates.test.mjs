@@ -75,7 +75,9 @@ test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more
   assert.match(wizard, /if \(!earnsStructuredDevelopmentCredit\(structure\)\) \{\n\s+await saveProgramDraft\(draftFromStructure\(structure\)\);\n\s+router\.replace\('\/program-builder'\);\n\s+return;/);
   // The block doors ask by length, never the Holt program outright. Four since Holt Listens HL-1d (11-18): "Build the
   // new one" from the Adjust door or a typed "replace my program" is the BUILD door's request and pays what it pays.
-  assert.equal(chat.match(/blockDoorRefuses\(/g)?.length, 4, 'its four doors');
+  // Three in the sheet, one in the typed turn (engine/turn.ts since HL-10 S3, through the sheet's hook).
+  const turn = read('../../domain/coach/engine/turn.ts');
+  assert.equal((chat.match(/blockDoorRefuses\(/g)?.length ?? 0) + (turn.match(/hooks\.blockDoorRefuses\(/g)?.length ?? 0), 4, 'its four doors');
   assert.doesNotMatch(chat, /guard\('holt_programs'\)/);
 });
 
