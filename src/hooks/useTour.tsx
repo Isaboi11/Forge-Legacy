@@ -60,6 +60,7 @@ import {
   type TourLeg,
   type TourPhase,
   type TourStep,
+  WHOLE_ON_FIRST_VISIT,
 } from '@/domain/onboarding/tour-plan';
 import {
   getHomeTourStatus,
@@ -648,7 +649,14 @@ export function useScreenPrompt(key: ScreenKey): {
   const phase = surfacePhase(key, workoutsLogged ?? Number.MAX_SAFE_INTEGER);
   const steps = useMemo(() => stepsFor(key, workoutsLogged ?? Number.MAX_SAFE_INTEGER), [key, workoutsLogged]);
 
-  const shouldShow = tipsEnabled && seenLoaded && !blocking && steps.length > 0 && !seen.includes(promptKeyFor(key, phase));
+  /*
+   * ⚠ THE FIRST-FINISH WALKTHROUGHS OUTLIVE THE RETIREMENT (PO 2026-11-18). Seal, posting and details were
+   * asked for on 11-16, two months after the tour was retired on 09-20, and built behind the same gate —
+   * so they never drew for anyone (*"I haven't seen the walkthrough for the posting"*). They alone are
+   * let through; every other surface stays retired. Once each, still, through the same seen-set.
+   */
+  const on = tipsEnabled || (TOUR_RETIRED && WHOLE_ON_FIRST_VISIT.includes(key));
+  const shouldShow = on && seenLoaded && !blocking && steps.length > 0 && !seen.includes(promptKeyFor(key, phase));
   const dismiss = useCallback(() => markSeen(key, phase), [markSeen, key, phase]);
   return { shouldShow, dismiss, steps };
 }

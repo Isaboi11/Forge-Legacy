@@ -51,6 +51,8 @@ import { reportError } from '@/lib/diagnostics';
 import { fetchMySquads } from '@/data/squad-live';
 import {
   NO_DESTINATIONS,
+  alwaysPostAsk,
+  answerAlwaysPost,
   autoPostStanding,
   destinationTargets,
   parseDestinations,
@@ -379,6 +381,8 @@ function WorkoutComplete() {
   const [shareRoute, setShareRoute] = useState(false);
   const [shareFood, setShareFood] = useState(false);
   const [posting, setPosting] = useState(false);
+  /* "Always post to <squad>?" is being saved — see ALWAYS POST below. */
+  const [answering, setAnswering] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
 
   /* The closing-the-app marker stands only while leaving would auto-post — i.e. while the rows are untouched. */
@@ -941,6 +945,29 @@ function WorkoutComplete() {
   const pendingTargets = destinationTargets(selection, memberIds ?? [], shares ?? []);
   const forgeSelected = pendingTargets.length > 0;
 
+  /*
+   * ══ "ALWAYS POST TO <SQUAD>?" — ASKED ONCE PER SQUAD (PO 2026-11-18) ══
+   *
+   * Auto-post's squads are the ones picked when it was turned on, so a squad joined later was ticked by
+   * hand after every workout and never became a destination. Ticking one now asks, under the rows; Add
+   * makes it a destination, No is kept on the pref so it is not asked again. Answering saves the pref
+   * only — it never changes what THIS post goes to, which is still exactly what the rows show.
+   */
+  const askId = !review && autoPost.loaded && memberIds ? alwaysPostAsk(autoPost.pref, chosenSquads.map((s) => s.id), memberIds) : null;
+  const askName = askId ? (mySquads?.find((s) => s.id === askId)?.name ?? 'this squad') : '';
+  const answerAsk = async (yes: boolean) => {
+    if (!askId || answering) return;
+    setAnswering(true);
+    try {
+      await autoPost.save(answerAlwaysPost(autoPost.pref, askId, yes));
+      if (yes) showToast(`Your workouts will post to ${askName} automatically.`);
+    } catch (e) {
+      showToast(errorMessage(e) || 'Couldn’t save that. Try again.');
+    } finally {
+      setAnswering(false);
+    }
+  };
+
   const toggleFriends = () => {
     setPostError(null);
     setFriendsPick(!selection.friends);
@@ -1415,6 +1442,18 @@ function WorkoutComplete() {
                 <ShareRow icon="people" title={squadRow.title} sub={squadRow.sub} mode="open" disabled={squadRow.disabled} onPress={() => setSheet('squads')} />
                 <ShareRow icon="share" title="Share outside Forge" sub="Instagram, Stories, Messages + More" mode="open" onPress={shareOutside} />
               </TourAnchor>
+
+              {askId ? (
+                <View style={styles.askLine}>
+                  <Text style={styles.askText} numberOfLines={2}>{`Always post to ${askName}?`}</Text>
+                  <Pressable onPress={() => void answerAsk(true)} disabled={answering} accessibilityRole="button" accessibilityLabel={`Always post to ${askName}`} hitSlop={10}>
+                    <Text style={styles.postedLink}>Yes</Text>
+                  </Pressable>
+                  <Pressable onPress={() => void answerAsk(false)} disabled={answering} accessibilityRole="button" accessibilityLabel={`Don’t always post to ${askName}`} hitSlop={10}>
+                    <Text style={styles.askNo}>No</Text>
+                  </Pressable>
+                </View>
+              ) : null}
 
               {/* Per-post ticks, asked only when there is something to ask and somewhere in Forge to post it. */}
               {forgeSelected && canShareRoute ? (
@@ -2313,6 +2352,9 @@ const styles = StyleSheet.create({
   postedLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 2 },
   postedText: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17, color: flColor.bronze300 },
   postedLink: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.bronze300 },
+  askLine: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 10, paddingHorizontal: 2 },
+  askText: { flex: 1, fontSize: 13, lineHeight: 18, color: flColor.gray400 },
+  askNo: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   capCta: { width: '100%', marginTop: 22 },
   postError: { marginTop: 10, fontSize: 12.5, lineHeight: 18, color: flColor.gray400, textAlign: 'center' },

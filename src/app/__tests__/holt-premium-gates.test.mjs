@@ -67,8 +67,9 @@ test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more
   assert.match(fn('const reallyStart = '), /const id = earnsStructuredDevelopmentCredit\(built\.structure\) \? await keepAsProgram\(\) : \(await createProgram\(built\.structure\)\)\.id;/);
   assert.doesNotMatch(chat, /consumeHoltAllowance\(mode_ === 'day' \? 'day' : 'program'\)/, 'every non-day build spending the program was the bug');
   assert.match(wizard, /if \(!earnsStructuredDevelopmentCredit\(structure\)\) \{\n\s+await saveProgramDraft\(draftFromStructure\(structure\)\);\n\s+router\.replace\('\/program-builder'\);\n\s+return;/);
-  // The three block doors ask by length, never the Holt program outright.
-  assert.equal(chat.match(/blockDoorRefuses\(/g)?.length, 3, 'its three doors');
+  // The block doors ask by length, never the Holt program outright. Four since Holt Listens HL-1d (11-18): "Build the
+  // new one" from the Adjust door or a typed "replace my program" is the BUILD door's request and pays what it pays.
+  assert.equal(chat.match(/blockDoorRefuses\(/g)?.length, 4, 'its four doors');
   assert.doesNotMatch(chat, /guard\('holt_programs'\)/);
 });
 

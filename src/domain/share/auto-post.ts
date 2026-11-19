@@ -49,6 +49,12 @@ export interface AutoPostPref {
    * the prompt is a lesson, and a lesson repeated after every workout is a nag.
    */
   asked: boolean
+  /**
+   * Squads the athlete answered "No" to on "Always post to <squad>?" (PO 2026-11-18). Each squad is asked
+   * once; this is where the No is kept so it is not asked again. Absent when empty, so a pref that never
+   * met the question reads back exactly as it did before the question existed.
+   */
+  declined?: string[]
 }
 
 export const AUTO_POST_DEFAULT: AutoPostPref = { friends: false, squadIds: [], asked: false }
@@ -63,11 +69,42 @@ export function sanitizeAutoPost(raw: unknown): AutoPostPref {
   if (!raw || typeof raw !== 'object') return { ...AUTO_POST_DEFAULT, squadIds: [] }
   const r = raw as Record<string, unknown>
   const ids = Array.isArray(r.squadIds) ? r.squadIds.filter((x): x is string => typeof x === 'string' && x.length > 0) : []
+  const no = Array.isArray(r.declined) ? r.declined.filter((x): x is string => typeof x === 'string' && x.length > 0) : []
   return {
     friends: r.friends === true,
     squadIds: [...new Set(ids)].slice(0, 50),
     asked: r.asked === true,
+    ...(no.length ? { declined: [...new Set(no)].slice(0, 50) } : {}),
   }
+}
+
+/**
+ * "ALWAYS POST TO <SQUAD>?" — the squad to ask about, or null (PO 2026-11-18).
+ *
+ * *"It's not auto posting to my newest squad. I have to select it every time."* Auto-post's squads are
+ * the ones picked when it was turned on; a squad joined or created after that is never added, so the
+ * athlete ticks it by hand after every workout and nothing learns from it. The PO chose to ASK rather
+ * than learn silently: a silent "your last choice sticks" would also drop a squad for good the one time
+ * it was unticked.
+ *
+ * Asked only while auto-post is ON — with it off, nothing posts by itself, and turning it on is the
+ * first-post prompt's lesson, not this one's. Asked about a squad that is in this post's selection, is
+ * still a membership, is not already an auto-post destination, and has not been answered No. The
+ * selection's own order decides which one when several qualify; the next is asked once that is answered.
+ */
+export function alwaysPostAsk(p: AutoPostPref, selectedSquadIds: readonly string[], memberSquadIds: readonly string[]): string | null {
+  const live = pruneAutoPost(p, memberSquadIds)
+  if (!autoPostOn(live)) return null
+  const member = new Set(memberSquadIds)
+  const no = new Set(p.declined ?? [])
+  return selectedSquadIds.find((id) => member.has(id) && !live.squadIds.includes(id) && !no.has(id)) ?? null
+}
+
+/** The pref after answering "Always post to <squad>?" — Yes adds it as a destination, No is remembered. */
+export function answerAlwaysPost(p: AutoPostPref, squadId: string, yes: boolean): AutoPostPref {
+  if (yes) return p.squadIds.includes(squadId) ? p : { ...p, squadIds: [...p.squadIds, squadId] }
+  const declined = p.declined ?? []
+  return declined.includes(squadId) ? p : { ...p, declined: [...declined, squadId] }
 }
 
 /**

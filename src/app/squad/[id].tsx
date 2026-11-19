@@ -840,7 +840,7 @@ function SquadDetailRoute() {
                   style={styles.face}
                 >
                   <View style={styles.faceRing}>
-                    <Avatar src={f.avatarUrl ?? undefined} name={f.name} size={46} />
+                    <Avatar src={f.avatarUrl ?? undefined} name={f.name} size={32} />
                   </View>
                   <Text style={styles.faceName} numberOfLines={1}>
                     {f.name.split(' ')[0]}
@@ -2117,12 +2117,14 @@ const styles = StyleSheet.create({
   metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: flColor.bronze400 },
   greenDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#5B7A61' },
   /* Bleeds to the screen edge so a long row scrolls under the gutter, then pays the gutter back inside. */
-  facesScroll: { marginTop: 16, marginHorizontal: -20, flexGrow: 0 },
+  /* 32pt faces (PO 11-18 picked "30% smaller" of 46): recognisable, tappable, and no longer competing with the
+     squad's name. */
+  facesScroll: { marginTop: 12, marginHorizontal: -20, flexGrow: 0 },
   faces: { gap: 14, paddingHorizontal: 20 },
-  face: { width: 56, alignItems: 'center', gap: 6 },
+  face: { width: 44, alignItems: 'center', gap: 6 },
   /* The same quiet green as the dot beside the count: trained today, not a rank. */
   faceRing: { padding: 2, borderRadius: 999, borderWidth: 1.5, borderColor: '#5B7A61' },
-  faceName: { maxWidth: 56, fontSize: 11.5, color: flColor.gray400 },
+  faceName: { maxWidth: 44, fontSize: 11.5, color: flColor.gray400 },
   heroDivider: { height: 1, backgroundColor: flColor.bronzeBorderSubtle, marginTop: 20, marginBottom: 16 },
 
   // current goal

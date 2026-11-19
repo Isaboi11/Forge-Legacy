@@ -231,6 +231,8 @@ export interface RefusalCard {
  */
 export type EditPick =
   | { step: 'session'; weekIndex: number; dayIndex: number }
+  /** Holt Listens HL-1e: a later week, opened to its sessions (the picker shows this week and next as chips). */
+  | { step: 'week'; weekIndex: number }
   | { step: 'change'; change: string }
   | { step: 'row'; index: number }
   | { step: 'value'; sets?: number; targetMi?: number; targetSec?: number; replacementKey?: string; replacementName?: string }

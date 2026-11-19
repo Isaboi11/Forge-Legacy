@@ -1,0 +1,112 @@
+/**
+ * listens.test.mjs — Holt hears "the whole program" and "replace it", and never asks the same question twice
+ * (Holt Listens step 1, tester report 2026-11-18).
+ *
+ * Run (from the repo root):  node --test --experimental-strip-types src/domain/coach/__tests__/listens.test.mjs
+ */
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { sameAskAgain, splitSessionPicker, wholeProgramAsk } from '../listens.ts';
+
+test('⭐ the tester\'s own words, verbatim (2026-11-18)', () => {
+  assert.equal(wholeProgramAsk('I want to edit the entire workout to include what I’ve mentioned above.'), 'whole');
+  assert.equal(wholeProgramAsk('I want to replace the entire program'), 'replace');
+});
+
+test('replace / start over, in the ways people say it', () => {
+  for (const s of [
+    'replace my program',
+    'scrap the whole plan and redo it',
+    "let's start over",
+    'start from scratch',
+    'just give me a brand new program',
+    'I want a new plan with all of that',
+    'ditch this block',
+    'get rid of the current routine',
+  ]) assert.equal(wholeProgramAsk(s), 'replace', s);
+});
+
+test('whole-program changes', () => {
+  for (const s of [
+    'change the whole program',
+    'add abs to the entire block',
+    'put face pulls in every pull day',
+    'add core to every session',
+    'all of the sessions should have cardio',
+    'do it across the program',
+    'apply it to all of them',
+    'more cable work overall',
+    'the full program needs rear delts',
+  ]) assert.equal(wholeProgramAsk(s), 'whole', s);
+});
+
+test('one-session changes are NOT program-wide — the edit flow runs as before', () => {
+  for (const s of [
+    'swap bench for dumbbell press on Monday',
+    'change the whole workout today',
+    'make tomorrow shorter',
+    'add a set of curls to Week 5 Pull',
+    'take out lunges on leg day',
+    '',
+    null,
+  ]) assert.equal(wholeProgramAsk(s), null, String(s));
+});
+
+test('a "new day/session" is not a new program', () => {
+  assert.equal(wholeProgramAsk('give me a new session for legs'), null);
+});
+
+test('the loop breaker: same question, same words → true; anything different → false', () => {
+  const ask = { ask: 'which_day', message: 'Which session should change?' };
+  assert.equal(sameAskAgain(null, ask), false);
+  assert.equal(sameAskAgain(ask, { ...ask }), true);
+  assert.equal(sameAskAgain(ask, { ask: 'which_exercise', message: 'Which session should change?' }), false);
+  assert.equal(sameAskAgain(ask, { ask: 'which_day', message: 'Which session in week 5?' }), false);
+});
+
+const S = (weekIndex, dayIndex) => ({ at: { weekIndex, dayIndex }, label: `W${weekIndex + 1}D${dayIndex + 1}` });
+
+test('⭐ the 22-chip wall: week 4 day 4 → week 8 → this week and next as chips, weeks 6–8 one tap away', () => {
+  const sessions = [S(3, 3), S(3, 4)];
+  for (let w = 4; w < 8; w += 1) for (let d = 0; d < 5; d += 1) sessions.push(S(w, d));
+  assert.equal(sessions.length, 22);
+  const { now, laterWeeks } = splitSessionPicker(sessions);
+  assert.deepEqual(now.map((s) => s.label), ['W4D4', 'W4D5', 'W5D1', 'W5D2', 'W5D3', 'W5D4', 'W5D5']);
+  assert.deepEqual(laterWeeks, [5, 6, 7]);
+});
+
+test('a short list stays whole', () => {
+  const sessions = [S(0, 0), S(0, 1), S(1, 0)];
+  assert.deepEqual(splitSessionPicker(sessions), { now: sessions, laterWeeks: [] });
+});
+
+// ── The sheet uses them (source pins, like the other chat-sheet tests) ──
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const SHEET = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../components/forge/CoachChatSheet.tsx'), 'utf8').replace(/\r\n/g, '\n');
+
+test('sheet: a TYPED request meets the active-program question with its words carried, not the canned line', () => {
+  assert.match(SHEET, /if \(typed\.current\.length\) \{\n\s+say\(\n\s+\{ kind: 'holt', text: typedGuardLine\(active\.name\), live: true \}/);
+  assert.match(SHEET, /\{ label: BUILD_THE_NEW_ONE, patch: \{\} \},\n\s+\{ label: JUST_A_WEEK, patch: \{ weeks: 1 \} \},\n\s+\{ label: KEEP_AND_CHANGE, patch: \{\} \},/);
+});
+
+test('sheet: the edit flow hears "replace" and "the whole program" before it asks for a session', () => {
+  assert.match(SHEET, /if \(!res\.ok && res\.ask === 'which_day'\) \{\n\s+const whole = wholeProgramAsk\(said\);/);
+  assert.match(SHEET, /return void buildTheNewOne\(said, REPLACE_LINE\);/);
+  assert.match(SHEET, /if \(whole === 'whole' && !rowChange\) \{/);
+});
+
+test('sheet: the loop breaker runs before the question is asked again', () => {
+  const loop = SHEET.indexOf('sameAskAgain(lastEditAsk.current');
+  const ask = SHEET.indexOf("lastEditAsk.current = res.ask === 'not_editable' ? null");
+  assert.ok(loop > 0 && ask > loop);
+});
+
+test('sheet: the session picker is split, and a later week opens to its sessions', () => {
+  assert.match(SHEET, /const \{ now, laterWeeks \} = splitSessionPicker\(sessions\);/);
+  assert.match(SHEET, /if \(pickStep\.step === 'week'\) \{/);
+});
