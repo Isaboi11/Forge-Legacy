@@ -42,6 +42,7 @@ export const FUNCTIONS = {
       'src/domain/coach/__tests__/coach-ask-memory.test.mjs',
       'src/domain/coach/__tests__/holt-memory.test.mjs',
       'src/domain/coach/__tests__/migration-0278.test.mjs',
+      'src/domain/ai/__tests__/migration-0281.test.mjs',
       'src/domain/coach/__tests__/chat-history.test.mjs',
       'src/domain/coach/__tests__/coach-ask-loop.test.mjs',
       'src/domain/coach/__tests__/coach-ask-turn.test.mjs',
@@ -70,6 +71,25 @@ export const FUNCTIONS = {
     probe: { options: 200, post: 401 },
     tests: ['src/domain/coach/__tests__/author.test.mjs', MEDICAL, ...META],
     suites: ['author'],
+  },
+  'coach-rewrite': {
+    builder: 'scripts/build-coach-rewrite-deploy.mjs',
+    exportName: 'buildCoachRewriteDeploy',
+    verifyJwt: true,
+    ai: true,
+    probe: { options: 200, post: 401 },
+    tests: [
+      'src/domain/coach/__tests__/coach-rewrite-source.test.mjs',
+      'src/domain/coach/engine/__tests__/rewrite-expand.test.mjs',
+      'src/domain/coach/engine/__tests__/checker.test.mjs',
+      'src/domain/coach/engine/__tests__/change-flow.test.mjs',
+      'src/domain/ai/__tests__/migration-0281.test.mjs',
+      MEDICAL,
+      ...META,
+    ],
+    suites: [],
+    noSuite:
+      'Holt Listens (11-19): gated by the live conversation corpus (scripts/holt-corpus/converse-live.mjs, 55 conversations, 54/55 on 11-19) — it sends this function\'s own prompt, schema and request; not yet an evals/ suite.',
   },
   'coach-form-check': {
     builder: 'scripts/build-coach-form-check-deploy.mjs',

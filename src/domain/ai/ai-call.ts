@@ -35,6 +35,8 @@ export const AI_APP_TIMEOUT_MS = {
   'recipe-link-read': 30_000,
   'bug-plain': 90_000,
   'meal-describe': 45_000,
+  /* Holt Listens (PO D12): a block rewrite measured 10–55 s live; the function's budget is 75 s. */
+  'coach-rewrite': 90_000,
 } as const satisfies Partial<Record<AiFunction, number>>;
 
 /** The functions this app calls through `invokeAi` (every AI function but the chat's streamed `coach-ask`). */

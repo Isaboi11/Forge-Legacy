@@ -54,7 +54,7 @@ export interface FakeWorld {
   authorAsks: unknown[];
   /** The rewriter's scripted replies (JSON text) and the user turns it was sent. */
   rewriteReplies: string[];
-  rewriteAsks: string[];
+  rewriteAsks: unknown[];
   /** The free allowance's answer to a spend. Default: allowed. */
   spendReply: { allowed: boolean; used: number; allowance: number } | null;
 }
@@ -122,8 +122,8 @@ export function fakePort(opts: FakePortOptions = {}): { port: EnginePort; world:
       },
       definitions: () => (opts.definitions ?? []) as ReturnType<EnginePort['build']['definitions']>,
       /* The rewriter, scripted: the next of `rewriteReplies` (JSON text), else unavailable. Asks are recorded. */
-      rewrite: async (userTurn) => {
-        world.rewriteAsks.push(userTurn);
+      rewrite: async (req) => {
+        world.rewriteAsks.push(req);
         const next = world.rewriteReplies.shift();
         return next == null ? { kind: 'unavailable' as const } : { kind: 'ok' as const, text: next };
       },

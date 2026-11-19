@@ -55,7 +55,9 @@ test('the anchor is in the live source exactly once (0272’s body), and the pat
   // The AiFunction list (domain/ai/ai-failure.ts) + social-plan — the same rule 0268's test holds.
   const ts = read('src/domain/ai/ai-failure.ts');
   const union = ts.slice(ts.indexOf('export type AiFunction'), ts.indexOf(';', ts.indexOf('export type AiFunction')));
-  assert.deepEqual(list.sort(), [...[...union.matchAll(/'([a-z-]+)'/g)].map((m) => m[1]), 'social-plan'].sort());
+  // coach-rewrite joined the AiFunction list later, with its own patch (0281 — migration-0281.test).
+  const ts277 = [...union.matchAll(/'([a-z-]+)'/g)].map((m) => m[1]).filter((f) => f !== 'coach-rewrite');
+  assert.deepEqual(list.sort(), [...ts277, 'social-plan'].sort());
   assert.equal(list.length, 14);
 });
 

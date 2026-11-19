@@ -61,8 +61,9 @@ test('⭐ P3 through the chat: Holt\'s words, then the app\'s facts of the chang
   const flow = await actOn(s.refs, s.port, s.sink, s.hooks, [{ name: 'propose_program_change', input: { brief: 'More rear delts: face pulls on Pull, rear delt fly on Upper.' } }], P3, { done: true, stop: null }, true, null, 'program');
   assert.deepEqual(flow, { shown: true, flow: true });
   assert.equal(s.world.rewriteAsks.length, 1);
-  assert.match(s.world.rewriteAsks[0], /rear delts/i, 'the rewriter was told what he asked');
-  assert.match(s.world.rewriteAsks[0], /Week 4:/, 'and handed the weeks still ahead');
+  assert.match(s.world.rewriteAsks[0].said.join(' '), /rear delts/i, 'the rewriter was told what he asked');
+  assert.match(s.world.rewriteAsks[0].program, /Week 4:/, 'and handed the weeks still ahead');
+  assert.equal(s.world.rewriteAsks[0].name, '8-Week Muscle Block');
 
   const lines = s.sink.holt();
   assert.match(lines[0], /face pulls/, 'Holt\'s words first');

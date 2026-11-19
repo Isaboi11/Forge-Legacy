@@ -33,6 +33,7 @@ import type { AskShown } from '../listens.ts';
 import type { ChatMode, ChatState, Room, Turn } from '../chat-core.ts';
 import type { Goal } from '../constraints.ts';
 import type { AuthorRequest, AuthorResult } from '../author.ts';
+import type { RewriteRequest } from '../rewrite.ts';
 import type { LearnedPreferences } from '../learned-preference.ts';
 import type { RecentWork } from '../recent-work.ts';
 import type { Refundable } from '../../ai/ai-call.ts';
@@ -71,10 +72,10 @@ export interface EnginePort {
     /** The built-in shelf. */
     definitions(): readonly ProgramDefinition[];
     /**
-     * Holt rewrites the weeks ahead (PO D12) — the rewriter's JSON text, or why not. ⚠ Not deployed yet: the live port
-     * answers `unavailable` until its function exists; only an app sending caps `change_v1` is offered the tool.
+     * Holt rewrites the weeks ahead (PO D12) — `coach-rewrite` on the phone; the rewriter's JSON text, or why not. Only
+     * an app sending caps `change_v1` is offered the tool that leads here.
      */
-    rewrite(userTurn: string): Promise<{ kind: 'ok'; text: string } | { kind: 'unavailable' | 'offline' | 'out_of_credits' }>;
+    rewrite(req: RewriteRequest): Promise<{ kind: 'ok'; text: string } | { kind: 'unavailable' | 'offline' | 'out_of_credits' }>;
     /** `consume_holt_allowance` — the only spend of the free allowance; null = unreadable. */
     spend(kind: 'program' | 'day'): Promise<{ allowed: boolean; used: number; allowance: number } | null>;
   };

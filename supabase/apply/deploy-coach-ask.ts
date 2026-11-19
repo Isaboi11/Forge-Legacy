@@ -4081,9 +4081,7 @@ Deno.serve(async (req) => {
             } | null;
         };
     }) => r.data.user?.id ?? null, () => null));
-    const TOOLS = v1
-        ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ...(change ? [ASK_ACTION_CHANGE] : [])]
-        : [...ASK_TOOLS, ...ASK_ACTIONS];
+    const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ...(change ? [ASK_ACTION_CHANGE] : [])] : [...ASK_TOOLS, ...ASK_ACTIONS];
     const PROMPT = v1 ? (change ? SYSTEM_V1_FOOD_CHANGE : SYSTEM_V1_FOOD) : SYSTEM;
     const forwards: readonly string[] = v1 ? [...LEGACY_ACTIONS, ...NEW_ACTIONS, ...(change ? CHANGE_ACTIONS : [])] : ASK_ACTION_NAMES;
     const foodReads: readonly string[] = v1 ? FOOD_TOOLS.map((t) => t.name) : [];
@@ -4412,7 +4410,7 @@ Deno.serve(async (req) => {
                                     }
                                     send({ action: { name: c.name, input: out } });
                                     delivered = true;
-                                    if (v1 && (c.name === 'propose_program' || c.name === 'propose_day'))
+                                    if (v1 && (c.name === 'propose_program' || c.name === 'propose_day' || c.name === 'propose_program_change'))
                                         openedBuild = true;
                                     acted.push(...words);
                                     const ack = !v1 ? actionAck(c.name as string) : FOOD_ACTION_NAMES.includes(c.name as string) ? foodActionAck(c.name as string) : actionAckV1(c.name as string);

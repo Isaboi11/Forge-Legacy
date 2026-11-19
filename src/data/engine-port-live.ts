@@ -17,6 +17,7 @@ import {
   updateProgram,
 } from '@/data/programs-live';
 import { fetchRecentWork } from '@/data/recent-work-live';
+import { rewriteLive } from '@/data/coach-rewrite-live';
 import type { EnginePort } from '@/domain/coach/engine/types';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
@@ -39,8 +40,8 @@ export function livePort(): EnginePort {
       recent: () => fetchRecentWork(),
       author: (req, signal) => authorLive(req, signal),
       definitions: () => getProgramDefinitions(),
-      /* ⚠ Not deployed yet (PO D12 work in progress): no app sends caps `change_v1`, so nothing reaches this. */
-      rewrite: async () => ({ kind: 'unavailable' as const }),
+      /* coach-rewrite (PO D12). ⚠ Reached only once the app sends caps `change_v1` and the function is deployed. */
+      rewrite: (req) => rewriteLive(req),
       spend: (kind) => consumeHoltAllowance(kind),
     },
     drafts: {

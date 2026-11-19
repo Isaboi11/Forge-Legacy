@@ -18,7 +18,7 @@ import { isRoom } from '../chat-core.ts';
 import type { Environment, Experience, Limitation } from '../constraints.ts';
 import { editableSessions } from '../edit-chat.ts';
 import { markHoltChange } from '../holt-marks.ts';
-import { expandRewrite, programText, rewriteFromModelText, rewriteUserTurn } from '../rewrite.ts';
+import { expandRewrite, programText, rewriteFromModelText } from '../rewrite.ts';
 import { checkRewrite } from './checker.ts';
 import { activeOrNull } from './guards.ts';
 import type { EnginePort, EngineRefs, EngineSink } from './types.ts';
@@ -108,15 +108,15 @@ export async function proposeChange(refs: EngineRefs, port: EnginePort, sink: En
   const owned = c.ownedEquipment ?? [];
   const limitations: readonly Limitation[] = c.limitations ?? [];
   const words = [...refs.typed.filter((t) => t !== said), said].filter(Boolean);
-  const user = rewriteUserTurn({
+  const req = {
     said: words,
     brief,
     athlete: { goal: c.goal ?? refs.profileGoal ?? null, level: experience, equipment: environment === 'home' ? owned : [environment.replace('_', ' ')], limitations },
     program: programText(active.structure, marks, first.at.weekIndex),
     name: active.name,
-  });
+  };
   sink.busy('building');
-  const r = await port.build.rewrite(user);
+  const r = await port.build.rewrite({ ...req, athlete: { ...req.athlete, equipment: [...req.athlete.equipment], limitations: [...req.athlete.limitations] } });
   sink.busy(null);
   if (r.kind !== 'ok') {
     return void sink.say({ kind: 'holt', text: "I couldn't rework it just now. Your program is unchanged — ask me again in a moment." });

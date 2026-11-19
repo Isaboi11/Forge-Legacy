@@ -24,7 +24,7 @@ import { FOOD_ACTIONS, FOOD_PROMPT, FOOD_TOOLS } from '../../src/domain/coach/as
 import { AUTHOR_OUTPUT_CAP, AUTHOR_SCHEMA, authoredFromModelText, authorUserTurn } from '../../src/domain/coach/author.ts';
 import { AUTHOR_CATALOGUE } from '../../src/domain/coach/author-catalogue.ts';
 import { CHANGE_ACTIONS, LEGACY_ACTIONS, NEW_ACTIONS } from '../../src/domain/coach/holt-actions.ts';
-import { REWRITE_OUTPUT_CAP, REWRITE_SCHEMA, REWRITE_SYSTEM, programText } from '../../src/domain/coach/rewrite.ts';
+import { REWRITE_OUTPUT_CAP, REWRITE_SCHEMA, REWRITE_SYSTEM, programText, rewriteUserTurn } from '../../src/domain/coach/rewrite.ts';
 import { requestFields } from '../../src/domain/ai/model-request.ts';
 import { contextFrom } from '../../src/domain/coach/candidates.ts';
 import { limitationPatterns } from '../../src/domain/coach/rulebook/limitations.ts';
@@ -161,7 +161,7 @@ async function converse(c) {
   const w = WORLDS[c.world]();
   const { port, world } = fakePort({ active: w.active, marks: w.marks, catalog: catalog() });
   world.profile = w.constraints;
-  port.build.rewrite = rewriter;
+  port.build.rewrite = (req) => rewriter(rewriteUserTurn(req));
   port.build.author = (req) => author(req);
   const sink = recordingSink();
   /* The phone remembers where they train (lib/coach-memory) and their level (onboarding) — so does the test. */

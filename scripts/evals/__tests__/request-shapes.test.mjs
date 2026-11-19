@@ -176,8 +176,10 @@ test('a dropped connection is retried once, then is an error — never recorded 
 
 test('ask-safety / ask-actions / ask-answers: coach-ask’s CAPS rounds — the caps tools and prompt, an action checked and acknowledged, a read answered empty, the last round tool_choice none (Sprint 4a)', async () => {
   const ASK = readText('supabase/functions/coach-ask/index.ts');
-  has(ASK, 'const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS] : [...ASK_TOOLS, ...ASK_ACTIONS];');
-  has(ASK, 'const PROMPT = v1 ? SYSTEM_V1_FOOD : SYSTEM;');
+  // Holt Listens: caps `change_v1` adds propose_program_change and its prompt; no eval suite sends it (the converse
+  // corpus does), so an actions_v1 suite still gets exactly the tools and prompt below.
+  has(ASK, 'const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ...(change ? [ASK_ACTION_CHANGE] : [])] : [...ASK_TOOLS, ...ASK_ACTIONS];');
+  has(ASK, 'const PROMPT = v1 ? (change ? SYSTEM_V1_FOOD_CHANGE : SYSTEM_V1_FOOD) : SYSTEM;');
   has(ASK, 'const SYSTEM_V1_FOOD = `${SYSTEM_V1}\n\n${FOOD_PROMPT}`;');
   has(ASK, "tools: allowWeb ? [...TOOLS, WEB_SEARCH] : TOOLS,");
   has(ASK, "...(last ? { tool_choice: { type: 'none' } } : {}),");

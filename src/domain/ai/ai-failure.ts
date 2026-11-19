@@ -25,7 +25,9 @@ export type AiFunction =
   | 'workout-card-read'
   | 'workout-tidy'
   | 'bug-plain'
-  | 'meal-describe';
+  | 'meal-describe'
+  /** Holt rewrites the running program (Holt Listens, PO D12). */
+  | 'coach-rewrite';
 
 /**
  * What went wrong, from the athlete's side of the screen.

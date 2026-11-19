@@ -1085,9 +1085,7 @@ Deno.serve(async (req) => {
     ));
 
   // Sprint 4a: what this turn offers, fixed per caps value so each keeps ONE stable cached prefix — reads, then actions.
-  const TOOLS = v1
-    ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ...(change ? [ASK_ACTION_CHANGE] : [])]
-    : [...ASK_TOOLS, ...ASK_ACTIONS];
+  const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ...(change ? [ASK_ACTION_CHANGE] : [])] : [...ASK_TOOLS, ...ASK_ACTIONS];
   const PROMPT = v1 ? (change ? SYSTEM_V1_FOOD_CHANGE : SYSTEM_V1_FOOD) : SYSTEM;
   /** What is forwarded to the app instead of run here. With caps: every name in the contract (holt-actions.ts). */
   const forwards: readonly string[] = v1 ? [...LEGACY_ACTIONS, ...NEW_ACTIONS, ...(change ? CHANGE_ACTIONS : [])] : ASK_ACTION_NAMES;
@@ -1440,7 +1438,7 @@ Deno.serve(async (req) => {
                     }
                     send({ action: { name: c.name, input: out } });
                     delivered = true;
-                    if (v1 && (c.name === 'propose_program' || c.name === 'propose_day')) openedBuild = true;
+                    if (v1 && (c.name === 'propose_program' || c.name === 'propose_day' || c.name === 'propose_program_change')) openedBuild = true;
                     // The card's words are the model's too (an online-search chip shows `looking_for`): scanned at the end.
                     acted.push(...words);
                     const ack = !v1 ? actionAck(c.name as string) : FOOD_ACTION_NAMES.includes(c.name as string) ? foodActionAck(c.name as string) : actionAckV1(c.name as string);
