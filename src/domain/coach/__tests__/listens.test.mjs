@@ -90,8 +90,11 @@ import path from 'node:path';
 const SHEET = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../components/forge/CoachChatSheet.tsx'), 'utf8').replace(/\r\n/g, '\n');
 
 test('sheet: a TYPED request meets the active-program question with its words carried, not the canned line', () => {
-  assert.match(SHEET, /if \(typed\.current\.length\) \{\n\s+say\(\n\s+\{ kind: 'holt', text: typedGuardLine\(active\.name\), live: true \}/);
-  assert.match(SHEET, /\{ label: BUILD_THE_NEW_ONE, patch: \{\} \},\n\s+\{ label: JUST_A_WEEK, patch: \{ weeks: 1 \} \},\n\s+\{ label: KEEP_AND_CHANGE, patch: \{\} \},/);
+  // The guard lives in the engine since HL-10 S1; engine/__tests__/s1-guards.test.mjs runs it for real.
+  const GUARDS = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../engine/guards.ts'), 'utf8').replace(/\r\n/g, '\n');
+  assert.match(GUARDS, /if \(refs\.typed\.length\) \{\n\s+sink\.say\(\n\s+\{ kind: 'holt', text: typedGuardLine\(active\.name\), live: true \}/);
+  assert.match(GUARDS, /\{ label: BUILD_THE_NEW_ONE, patch: \{\} \},\n\s+\{ label: JUST_A_WEEK, patch: \{ weeks: 1 \} \},\n\s+\{ label: KEEP_AND_CHANGE, patch: \{\} \},/);
+  assert.match(SHEET, /engineGuard\(engine\.current, port, sink, request\)/);
 });
 
 test('sheet: the edit flow hears "replace" and "the whole program" before it asks for a session', () => {

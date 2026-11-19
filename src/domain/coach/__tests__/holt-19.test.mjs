@@ -15,6 +15,8 @@ import { programSessionOffer, SOMETHING_ELSE_TODAY, JUST_A_WEEK, fromOpener, nex
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sheet = readFileSync(path.join(here, '../../../components/forge/CoachChatSheet.tsx'), 'utf8');
+/* The active-program question moved out of the sheet into the engine (Holt Listens HL-10 S1) — same code. */
+const guards = readFileSync(path.join(here, '../engine/guards.ts'), 'utf8');
 
 test('the offer names the session and the program, and carries the program to train', () => {
   const [line, chips] = programSessionOffer('p-1', 'Stronglifts 5x5', 'Workout A');
@@ -41,8 +43,8 @@ test('a single week skips the length question — the chip answers it', () => {
 
 test('the sheet: the day door offers the program session; the running-program question lets a week through', () => {
   assert.match(sheet, /opener\.mode === 'day' && \(await offerProgramSession\(\)\)\) return;/);
-  assert.match(sheet, /if \(request && isOneWeek\(request\)\) return true;/);
-  assert.match(sheet, /\{ label: JUST_A_WEEK, patch: \{ weeks: 1 \} \}/);
+  assert.match(guards, /if \(request && isOneWeek\(request\)\) return true;/);
+  assert.match(guards, /\{ label: JUST_A_WEEK, patch: \{ weeks: 1 \} \}/);
   // every caller hands the guard its request, or a typed "build me a week" would still be refused
   assert.equal((sheet.match(/guardActiveProgram\(\)/g) ?? []).length, 0);
   assert.ok((sheet.match(/guardActiveProgram\(request\)/g) ?? []).length >= 3);

@@ -91,8 +91,9 @@ export function fakePort(opts: FakePortOptions = {}): { port: EnginePort; world:
     catalog: opts.catalog ?? [],
     choose: seededChooser(opts.seed ?? 1),
     now: () => now,
-    /* Bounds resolve at once in tests: a `hang` read loses the race immediately, as a slow phone would after 4 s. */
-    wait: () => Promise.resolve(),
+    /* A bound fires on the next macrotask: every fake read (microtasks) wins it, and a `hang` read loses it at once,
+       as a slow phone would after 4 s. Never `Promise.resolve()` — that ties with a read and the bound can win. */
+    wait: () => new Promise<void>((resolve) => setTimeout(resolve, 0)),
   };
   return { port, world };
 }

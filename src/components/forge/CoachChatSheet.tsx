@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 /*
  * ⚠ NOT `useAnimatedValue` — IT DOES NOT EXIST ON WEB, AND IT TAKES THE WHOLE PAGE DOWN.
  *
@@ -32,6 +32,9 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/Confirm
 import { HoltMark } from '@/components/forge/HoltMark';
 import { HoltWords } from '@/components/forge/HoltWords';
 import { holtPlainText } from '@/domain/coach/holt-markdown';
+import { livePort } from '@/data/engine-port-live';
+import { ACTIVE_LOOKUP_TIMEOUT_MS, guardActiveProgram as engineGuard, offerProgramSession as engineOffer } from '@/domain/coach/engine/guards';
+import { freshRefs, type EngineRefs, type EngineSink } from '@/domain/coach/engine/types';
 import {
   BUILD_THE_NEW_ONE,
   KEEP_AND_CHANGE,
@@ -42,7 +45,6 @@ import {
   laterWeekLabel,
   sameAskAgain,
   splitSessionPicker,
-  typedGuardLine,
   wholeProgramAsk,
   wholeProgramLine,
   type AskShown,
@@ -195,8 +197,6 @@ import {
   withoutHeldCards,
   streamInto,
   cutOffReply,
-  programSessionOffer,
-  isOneWeek,
   JUST_A_WEEK,
   type ChatState,
   type Chip,
@@ -251,7 +251,7 @@ import {
   type ProgramStructure,
   type SavedProgram,
 } from '@/data/programs-live';
-import { dayLabel, earnsStructuredDevelopmentCredit, nextOpenSlot, type SessionMark } from '@/domain/program/progress-core';
+import { earnsStructuredDevelopmentCredit, type SessionMark } from '@/domain/program/progress-core';
 import { plainError } from '@/lib/plain-error';
 import { contextFrom } from '@/domain/coach/candidates';
 import { carriedDoseNote, setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
@@ -683,7 +683,11 @@ export function CoachChatSheet({
    * whole, to `coach-author` when it is time to build. Empty means nothing was typed — a tapped build — and
    * the rulebook builds exactly as it always has.
    */
-  const typed = useRef<string[]>([]);
+  /* Holt Listens HL-10 (S1): `typed` and `askedAboutReplacing` live in the engine's refs now (`engine/types.ts`), so the
+     moved guards and these handlers read the same memory. One instance for the life of the sheet, as the refs were. */
+  const engine = useRef<EngineRefs>(freshRefs());
+  /* The engine's world on this phone (`data/engine-port-live.ts`). Made once; tests use `engine/testing.ts`. */
+  const [port] = useState(livePort);
   /* What onboarding recorded as their goal, and whether the goal on this request is that stand-in rather
      than something they said — a stand-in is never passed to the model as if it were their answer. */
   const profileGoal = useRef<Goal | null>(null);
@@ -693,14 +697,16 @@ export function CoachChatSheet({
   const stopFor = useRef<(route: 'crisis' | 'urgent' | 'care' | 'medical', text: string) => void>(() => undefined);
   const goalGuessed = useRef(false);
   const beginRequest = (words: string[]) => {
-    typed.current = words;
+    engine.current.typed = words;
     goalGuessed.current = false;
   };
   const alsoSaid = (text: string) => {
-    if (typed.current[typed.current.length - 1] !== text) typed.current = [...typed.current, text];
+    if (engine.current.typed[engine.current.typed.length - 1] !== text) engine.current.typed = [...engine.current.typed, text];
   };
 
   const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...stamped(turns)]), []);
+  /** What the engine draws through: Holt's turns and the busy state. */
+  const sink = useMemo<EngineSink>(() => ({ say, busy: setBusy }), [say]);
 
   /**
    * The door to a Holt BLOCK (MA4-D5): a week spends `short_programs`, never the one lifetime Holt program, so a
@@ -906,7 +912,7 @@ export function CoachChatSheet({
       /* A TYPED day is not asked "what are we chasing today?" — they have just said what they want, and
          Holt reads the goal out of that. The rulebook fallback still needs one, so it gets what onboarding
          recorded, else the moderate range `buildDayWorkout` already treats as the least wrong guess. */
-      if (mode_ === 'day' && typed.current.length && nextQuestion(merged, mode_)?.id === 'goal') {
+      if (mode_ === 'day' && engine.current.typed.length && nextQuestion(merged, mode_)?.id === 'goal') {
         merged.goal = profileGoal.current ?? 'muscle';
         goalGuessed.current = profileGoal.current == null;
       }
@@ -1070,7 +1076,7 @@ export function CoachChatSheet({
           };
           const a = await authorLive({
             kind,
-            said: typed.current,
+            said: engine.current.typed,
             minutes: c.sessionMinutes,
             days,
             weeks,
@@ -1086,7 +1092,7 @@ export function CoachChatSheet({
           if (a.kind === 'stop') {
             setBusy(null);
             /* Through the same four helpers as every other stop, so the line is marked and never sent again. */
-            stopFor.current(a.route, typed.current[typed.current.length - 1] ?? '');
+            stopFor.current(a.route, engine.current.typed[engine.current.typed.length - 1] ?? '');
             return false;
           }
           if (a.kind === 'no_consent') holt.fellBack = AI_DECLINED_HOLT;
@@ -1099,7 +1105,7 @@ export function CoachChatSheet({
           }
           return true;
         };
-        if (typed.current.length && !isEnduranceGoal(c.goal)) {
+        if (engine.current.typed.length && !isEnduranceGoal(c.goal)) {
           const kind = mode_ === 'day' ? 'day' : 'program';
           const ok = await holtWrites(kind, kind === 'program' ? c.daysPerWeek : null, kind === 'program' ? (c.weeks ?? defaultWeeksFor(c.goal)) : null, null);
           if (!ok) return;
@@ -1240,7 +1246,7 @@ export function CoachChatSheet({
          */
         let raceLine: string | null = null;
         const builtWeeks = structure.weeks;
-        if (typed.current.length && isEnduranceGoal(c.goal)) {
+        if (engine.current.typed.length && isEnduranceGoal(c.goal)) {
           const shape = raceWeekShape(structure);
           if (shape.liftDays > 0) {
             setBusy('building');
@@ -1394,95 +1400,18 @@ export function CoachChatSheet({
    * invariant the whole progress model rests on; a modal saying "are you sure?" would just be the app
    * being nervous at them.
    */
-  const askedAboutReplacing = useRef(false);
-
-  /** Long enough for a slow connection, short enough that it never reads as a hang. */
-  const ACTIVE_LOOKUP_TIMEOUT_MS = 4000;
-
-  const guardActiveProgram = useCallback(async (request?: ChatState): Promise<boolean> => {
-    if (askedAboutReplacing.current) return true;
-    /* QA holt-19: a single week is saved as a week, not started as a program — it ends nothing, so a
-       running block is no reason to refuse it. Starting it later asks by name, as any Start does. */
-    if (request && isOneWeek(request)) return true;
-    /*
-     * ⚠ **A SILENT AWAIT IS A STALL, WHICH IS WHAT THIS LOOKED LIKE.** The athlete taps "Build me a
-     * program", their own line appears, and then nothing happens at all while this round-trip runs —
-     * no bubble, no dimmed composer, no sign anybody heard them. On a phone with one bar that is
-     * indistinguishable from a frozen app, so the wait is SHOWN.
-     */
-    setBusy('thinking');
-    /*
-     * And it is BOUNDED. `fetchActiveProgram` already fell back to "no active program" when it threw;
-     * a socket that hangs open is the same unknown arriving more slowly, and waiting forever on it is
-     * strictly worse than assuming. Safe to assume HERE ONLY because nothing is created or started here:
-     * this is the conversational nudge before a build. The door that ENDS a running program is START IT
-     * NOW (`startNow`), and that one fails CLOSED — an unknown asks there (`checkActiveProgram`, launch QA
-     * B14 / UX-006). Never copy this fail-open race into anything that starts a program.
-     */
-    const active = await Promise.race([
-      fetchActiveProgram().catch(() => null),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
-    ]);
-    setBusy(null);
-    if (!active) return true;
-    askedAboutReplacing.current = true;
-    /*
-     * Holt Listens HL-1d (tester 2026-11-18): when they TYPED what they want, the question carries it - "Build the new
-     * one" builds from their words (the same path as "Replace it"), and he says so, instead of a line that ignores
-     * everything they just told him. A tapped door keeps its old line and chips.
-     */
-    if (typed.current.length) {
-      say(
-        { kind: 'holt', text: typedGuardLine(active.name), live: true },
-        {
-          kind: 'chips',
-          chips: [
-            { label: BUILD_THE_NEW_ONE, patch: {} },
-            { label: JUST_A_WEEK, patch: { weeks: 1 } },
-            { label: KEEP_AND_CHANGE, patch: {} },
-          ],
-        },
-      );
-      return false;
-    }
-    say(
-      { kind: 'holt', text: `You've already got ${active.name} running. I'm not going to start a second one behind your back.`, live: true },
-      {
-        kind: 'chips',
-        chips: [
-          { label: 'Replace it', patch: {} },
-          /* QA holt-19: "A program or a week" — the week needs no replacing; it carries this request on. */
-          { label: JUST_A_WEEK, patch: { weeks: 1 } },
-          /* Where "Change the one I have" leads — the running program's own page, not the Workouts tab (holtai-06). */
-          { label: 'Change the one I have', patch: {}, goTo: `/program/${active.id}` },
-        ],
-      },
-    );
-    return false;
-  }, [say]);
+  /* The guard itself is the engine's (`engine/guards.ts`, HL-10 S1) — same words, same chips, same bound. */
+  const guardActiveProgram = useCallback(
+    (request?: ChatState): Promise<boolean> => engineGuard(engine.current, port, sink, request),
+    [port, sink],
+  );
 
   /**
    * QA holt-19 — "What should I train today?" with a program running names the program's next session
    * and offers it, before building anything. True when he asked; false (build the day as before) when
    * there is no program, it is finished, or the lookup failed or ran long — never a reason to refuse.
    */
-  const offerProgramSession = useCallback(async (): Promise<boolean> => {
-    setBusy('thinking');
-    const found = await Promise.race([
-      (async () => {
-        const active = await fetchActiveProgram().catch(() => null);
-        if (!active) return null;
-        const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
-        const next = nextOpenSlot(active.structure, marks);
-        return next?.day ? { active, name: dayLabel(next.day, next.dayIndex) } : null;
-      })(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
-    ]);
-    setBusy(null);
-    if (!found) return false;
-    say(...programSessionOffer(found.active.id, found.active.name, found.name));
-    return true;
-  }, [say]);
+  const offerProgramSession = useCallback((): Promise<boolean> => engineOffer(port, sink), [port, sink]);
 
   const helpChips = (): Chip[] => HELP_TOPICS.map((t) => ({ label: t.q, patch: {}, helpTopic: t.q }));
 
@@ -1513,7 +1442,7 @@ export function CoachChatSheet({
     setLastCard(null);
     setPreview(false);
     setDraft('');
-    askedAboutReplacing.current = false;
+    engine.current.askedAboutReplacing = false;
     lastEditAsk.current = null;
     beginRequest([]);
     /* Facts about the ATHLETE survive a new conversation; everything situational deliberately does not.
@@ -1576,7 +1505,7 @@ export function CoachChatSheet({
     setPreview(false);
     setEdit(null);
     setDraft('');
-    askedAboutReplacing.current = false;
+    engine.current.askedAboutReplacing = false;
     beginRequest([]);
     const kept = athleteFacts(constraints);
     setConstraints(kept);
@@ -1643,7 +1572,7 @@ export function CoachChatSheet({
     const { now, laterWeeks } = splitSessionPicker(sessions);
     say(
       /* HL-1d: a typed request is waiting - he is honest that this flow goes a session at a time. */
-      { kind: 'holt', text: typed.current.length ? ONE_SESSION_FIRST_LINE : pick('ask_edit_session') },
+      { kind: 'holt', text: engine.current.typed.length ? ONE_SESSION_FIRST_LINE : pick('ask_edit_session') },
       {
         kind: 'chips',
         chips: [
@@ -1887,7 +1816,7 @@ export function CoachChatSheet({
     pendingEdit.current = null;
     pendingEditAsk.current = null;
     lastEditAsk.current = null;
-    askedAboutReplacing.current = true;
+    engine.current.askedAboutReplacing = true;
     if (said) alsoSaid(said);
     if (mode !== 'program') {
       /* Not mid-build (the Adjust door, or a day): this is the BUILD door's request, so it pays what that door pays. */
@@ -3327,7 +3256,7 @@ export function CoachChatSheet({
            rather than walking them through five taps to say what they already said. */
         /* A draft Holt just wrote is changed by writing it again with this message added — "add one more
            triceps movement" is about the card on screen, not about a program they are running. */
-        if (r.to === 'edit' && built && typed.current.length && mode && mode !== 'pick') {
+        if (r.to === 'edit' && built && engine.current.typed.length && mode && mode !== 'pick') {
           alsoSaid(text);
           return void advance(constraints, mode);
         }

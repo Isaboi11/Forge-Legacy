@@ -12,7 +12,7 @@ const wizard = read('../coach.tsx');
 const detail = read('../program/[id].tsx');
 
 /** `advance` — the chat's build — from its declaration to the next top-level declaration after it. */
-const advance = chat.slice(chat.indexOf('const advance = useCallback('), chat.indexOf('const askedAboutReplacing'));
+const advance = chat.slice(chat.indexOf('const advance = useCallback('), chat.indexOf('const guardActiveProgram = useCallback(')); // the guard moved to engine/guards.ts (HL-10 S1); its wrapper is the next declaration
 /** One top-level chat function, from its declaration to the next one. */
 const fn = (head) => {
   const at = chat.indexOf(head);
