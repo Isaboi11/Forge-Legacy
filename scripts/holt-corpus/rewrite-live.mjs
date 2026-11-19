@@ -20,8 +20,9 @@ import { BENJAMIN_KIT, benjaminWorld, catalog } from '../../src/domain/coach/eng
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '../..');
-const env = readFileSync(path.join(ROOT, '.env.local'), 'utf8');
-const key = /ANTHROPIC_API_KEY\s*=\s*"?([^"\n]+)"?/.exec(env)?.[1]?.trim();
+/* The key: the environment, else .env.local here, else the file FL_ENV_FILE names (a worktree has no .env.local). */
+const envFile = process.env.FL_ENV_FILE ?? path.join(ROOT, '.env.local');
+const key = process.env.ANTHROPIC_API_KEY ?? /ANTHROPIC_API_KEY\s*=\s*"?([^"\n]+)"?/.exec(readFileSync(envFile, 'utf8'))?.[1]?.trim();
 if (!key) throw new Error('ANTHROPIC_API_KEY not in .env.local');
 
 const MODEL = 'claude-sonnet-5';
