@@ -48,6 +48,7 @@ import {
 } from '../listens.ts';
 import { pick } from '../rulebook/voice.ts';
 import { activeOrNull } from './guards.ts';
+import { optionsInWords } from './lane.ts';
 import type { EnginePort, EngineRefs, EngineSink } from './types.ts';
 
 /** Said when the plan read has not come back yet — never a "no". */
@@ -356,6 +357,12 @@ export async function editByWords(
     if (whole === 'whole' && !rowChange) {
       refs.pendingEditAsk = null;
       refs.lastEditAsk = null;
+      /* AI lane (S7): said, not tapped — and the replace question is now asked, so "build the new one" builds. */
+      if (hooks.premiumAi) {
+        refs.askedAboutReplacing = true;
+        sink.say({ kind: 'holt', text: `${wholeProgramLine(active.name)} Which do you want?` });
+        return;
+      }
       sink.say(
         { kind: 'holt', text: wholeProgramLine(active.name) },
         { kind: 'chips', chips: [{ label: BUILD_THE_NEW_ONE, patch: {} }, { label: ONE_AT_A_TIME, patch: {} }] },
@@ -366,6 +373,7 @@ export async function editByWords(
   if (!res.ok && res.ask !== 'not_editable' && said && sameAskAgain(refs.lastEditAsk, { ask: res.ask, message: res.message })) {
     /* The loop breaker: they typed instead of tapping, and the resolver would ask the very same thing again. */
     refs.pendingEditAsk = { intent: res.retarget ? { ...wanted, op: res.retarget } : wanted, ask: res.ask };
+    if (hooks.premiumAi) return void sink.say({ kind: 'holt', text: optionsInWords(LOOP_LINE.replace(/ — tap one, or name it,/, ' — name it,'), res.options) });
     sink.say(
       { kind: 'holt', text: LOOP_LINE },
       {
@@ -382,6 +390,8 @@ export async function editByWords(
     refs.lastEditAsk = res.ask === 'not_editable' ? null : { ask: res.ask, message: res.message };
     /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
     refs.pendingEditAsk = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...wanted, op: res.retarget } : wanted, ask: res.ask };
+    /* AI lane (S7): the question and its options in words; the athlete answers by typing, and Holt places it. */
+    if (hooks.premiumAi) return void sink.say({ kind: 'holt', text: res.ask === 'not_editable' ? res.message : optionsInWords(res.message, res.options) });
     sink.say(
       { kind: 'holt', text: res.message },
       ...(res.ask !== 'not_editable' && res.options.length

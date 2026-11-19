@@ -62,10 +62,13 @@ import { defaultWeeksFor } from '../rulebook/skeletons.ts';
 import { pick } from '../rulebook/voice.ts';
 import { overCeilingLine, typedBlock, typedBlockLine, typedOverCeiling } from '../typed-block.ts';
 import { PLAN_UNCHECKED } from './edit.ts';
-import type { Built, EnginePort, EngineRefs, EngineSink } from './types.ts';
+import { askInWords, assumedLine, assumeForAiLane } from './lane.ts';
+import type { Built, EnginePort, EngineRefs, EngineSink, Lane } from './types.ts';
 
 /** What the build still needs from the sheet — React values on the phone, fakes in a test. */
 export interface BuildHooks {
+  /** Which conversation (S7, PO D10): `ai` asks in words and assumes the low-stakes answers; `tap` is today's chips. */
+  lane: Lane;
   gates(key: CapKey): CapGate;
   closeSignal(): AbortSignal;
   /** The stop helpers (crisis / urgent / care / medical): the card goes up and the line is marked never-resend. */
@@ -158,6 +161,16 @@ export async function advance(
   } else if (merged.environment !== refs.room) {
     refs.roomAssumed = false;
   }
+  /*
+   * ══ AI LANE: A COACH DOES NOT STOP FOR THE SMALL THINGS (S7, PO D10 / P7) ══ Session length, what to work around and
+   * the block's length are assumed — 60 minutes, nothing, the goal's usual length — and SAID before the build, so a
+   * word changes them. Only what was never said is filled; anything they said stands.
+   */
+  if (hooks.lane === 'ai' && mode_ !== 'pick') {
+    const { next: filled, assumed } = assumeForAiLane(merged, mode_);
+    Object.assign(merged, filled);
+    for (const a of assumed) if (!refs.assumed.includes(a)) refs.assumed.push(a);
+  }
   hooks.setConstraints(merged);
   if (merged.experience) void port.memory.rememberExperience(merged.experience);
 
@@ -172,8 +185,16 @@ export async function advance(
       /* The short beat before the question — "Good." / "Right." / "Noted." It is what the original
        hardcoded line did ("Good. What are you training for?"), now varied so it does not become the
          tic that makes him sound like a script. */
-      if (q) sink.say({ kind: 'holt', text: `${lead ?? pick('ack', port.choose)} ${q.ask}` }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+      /* AI lane: asked in words, the choices named inline, nothing to tap — the answer is typed (or spoken). */
+      if (q && hooks.lane === 'ai') sink.say({ kind: 'holt', text: `${lead ?? pick('ack', port.choose)} ${askInWords(q)}` });
+      else if (q) sink.say({ kind: 'holt', text: `${lead ?? pick('ack', port.choose)} ${q.ask}` }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
       return;
+    }
+    /* What he assumed for this request, said once, before he builds it (AI lane). */
+    const assumedSaid = mode_ !== 'pick' ? assumedLine(refs.assumed) : null;
+    if (assumedSaid) {
+      sink.say({ kind: 'holt', text: assumedSaid });
+      refs.assumed = [];
     }
 
     /*

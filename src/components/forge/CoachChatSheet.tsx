@@ -35,6 +35,7 @@ import { holtPlainText } from '@/domain/coach/holt-markdown';
 import { livePort } from '@/data/engine-port-live';
 import { ACTIVE_LOOKUP_TIMEOUT_MS, guardActiveProgram as engineGuard, offerProgramSession as engineOffer } from '@/domain/coach/engine/guards';
 import { freshRefs, type Built, type EngineRefs, type EngineSink } from '@/domain/coach/engine/types';
+import { askInWords, CHANGE_WHAT_LINE, laneFor } from '@/domain/coach/engine/lane';
 import { actOn as engineActOn } from '@/domain/coach/engine/act';
 import {
   alsoSaid as engineAlsoSaid,
@@ -807,6 +808,8 @@ export function CoachChatSheet({
    */
   const buildHooks = useMemo<BuildHooks>(
     () => ({
+      /* S7 (PO D10): Premium AI talks; everyone else keeps the taps. */
+      lane: laneFor(premiumAi),
       gates,
       closeSignal,
       stop: (route, text) => stopFor.current(route, text),
@@ -814,7 +817,7 @@ export function CoachChatSheet({
       setConstraints,
       setBuilt,
     }),
-    [gates, closeSignal, setConstraints, setBuilt],
+    [premiumAi, gates, closeSignal, setConstraints, setBuilt],
   );
   const sayHoltRefused = useCallback(
     (kind: 'day' | 'program', verdict: 'used_up' | 'retry', offerWeek = false) => engineSayHoltRefused(port, sink, buildHooks, kind, verdict, offerWeek),
@@ -836,8 +839,8 @@ export function CoachChatSheet({
    */
   /* The guard itself is the engine's (`engine/guards.ts`, HL-10 S1) — same words, same chips, same bound. */
   const guardActiveProgram = useCallback(
-    (request?: ChatState): Promise<boolean> => engineGuard(engine.current, port, sink, request),
-    [port, sink],
+    (request?: ChatState): Promise<boolean> => engineGuard(engine.current, port, sink, request, laneFor(premiumAi)),
+    [port, sink, premiumAi],
   );
 
   /**
@@ -1242,6 +1245,9 @@ export function CoachChatSheet({
       }
 
       if (opener.kind === 'edit') {
+        /* AI lane (S7, PO D10): Home's ADJUST card starts the conversation — he asks what, in words. Without
+           Premium AI, beginEdit says it is part of Premium AI (changing it yourself stays free). */
+        if (premiumAi) return void say({ kind: 'holt', text: CHANGE_WHAT_LINE });
         void beginEdit();
         return;
       }
@@ -1999,7 +2005,8 @@ export function CoachChatSheet({
           const end: TurnEnd = { done: r.complete, stop: r.stop ?? null };
           const acted = await actOn(r.actions, text, end, cardsMayShow(end) && !r.cut, q, mode ?? 'program');
           /* A card or a button under a reply mid-build: the build question still comes back under it. */
-          if (acted.shown && !acted.flow && q && !opts.kitchen) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+          /* AI lane (S7): the question on the table comes back in words, not as chips. */
+          if (acted.shown && !acted.flow && q && !opts.kitchen) say({ kind: 'holt', text: askInWords(q) });
           if (acted.shown) return;
         }
         /* kitchen-07: he SAID he'd look online without calling the tool — the chip goes under him anyway. */
@@ -2017,10 +2024,10 @@ export function CoachChatSheet({
           if (doors.length) say({ kind: 'chips', chips: doors.map((d) => ({ label: d.label, patch: {}, goTo: d.goTo })) });
           return;
         }
-        if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+        if (q) say({ kind: 'holt', text: askInWords(q) });
         /* Never in the kitchen: "plan my meals" is not a training program (stress test). And never while a
            program is running — "what's my next workout?" is about the one they have (holtai-22). */
-        else if (!opts.kitchen && !active && /\b(program|plan|routine|workout|split)\b/i.test(text)) say({ kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
+        /* AI lane (S7): no "Build me something" button — the coach-ask prompt already has him offer it in words. */
         return;
       case 'crisis':
         return crisisStop(text);

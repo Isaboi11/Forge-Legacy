@@ -42,6 +42,7 @@ import { typedEquipment } from '../typed-equipment.ts';
 import { advance, type BuildHooks } from './build.ts';
 import { editByWords, type EditHooks } from './edit.ts';
 import { guardActiveProgram } from './guards.ts';
+import { askInWords, CHANGE_WHAT_LINE } from './lane.ts';
 import type { EnginePort, EngineRefs, EngineSink } from './types.ts';
 
 /** What the typed turn still needs from the sheet (until S5/S7). */
@@ -143,9 +144,12 @@ export async function respondTo(
          the table (an emoji, "ok", a stray line) it reads as a coach who is not listening — he offers the
          doors instead (live run 2026-09-22: 23 small-talk lines got "didn't catch that"). */
       if (q) {
-        sink.say({ kind: 'holt', text: pick('not_understood', port.choose) }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+        if (hooks.premiumAi) sink.say({ kind: 'holt', text: `${pick('not_understood', port.choose)} ${askInWords(q)}` });
+        else sink.say({ kind: 'holt', text: pick('not_understood', port.choose) }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
         return;
       }
+      /* AI lane: he is listening — no doors to tap, just the question. */
+      if (hooks.premiumAi && !hooks.kitchen) return void sink.say({ kind: 'holt', text: "I'm here. What are we working on?" });
       sink.say(
         hooks.kitchen
           ? { kind: 'holt', text: KITCHEN_UNCLEAR }
@@ -159,7 +163,8 @@ export async function respondTo(
        asking "what's RPE?" while he wants to know your days should not lose the build. */
     case 'answer':
       sink.say({ kind: 'holt', text: r.text });
-      if (q) sink.say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+      if (q && hooks.premiumAi) sink.say({ kind: 'holt', text: askInWords(q) });
+      else if (q) sink.say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
       return;
     /* A door the app already has. Opened exactly as the matching opener chip opens it, minus the echo —
        the athlete's own sentence is already in the thread. */
@@ -173,6 +178,10 @@ export async function respondTo(
         return void advance(refs, port, sink, hooks.build, refs.constraints, refs.mode);
       }
       if (r.to === 'edit' && r.edit) return editByWords(refs, port, sink, hooks.edit, r.edit, text);
+      /* AI lane: "change my program" with nothing said about what — he asks, in words, instead of a session picker. */
+      if (r.to === 'edit' && hooks.premiumAi) {
+        return void sink.say({ kind: 'holt', text: CHANGE_WHAT_LINE });
+      }
       /* "Give me something for today, keep it light, mostly machines" opens the door with nothing the
          form could hold — and everything Holt needs. The door resets the request; the sentence is put
          back so he still reads it when it is time to build. */
@@ -232,7 +241,7 @@ export async function respondTo(
          block they already run, and "Replace it" carries on from `constraints` — so the parsed request has
          to be in state first, or a fully typed build comes back as "What's the goal?". */
       hooks.setConstraints(request);
-      if (opens === 'program' && !(await guardActiveProgram(refs, port, sink, request))) return;
+      if (opens === 'program' && !(await guardActiveProgram(refs, port, sink, request, hooks.build.lane))) return;
       /* ⚠ THE MODEL'S LINE WAITS FOR THE GUARDS (QA holtai-22). Said first, "Let's replace that plan." sat
          above "You've already got X running…" — Holt announcing a replacement nobody had agreed to — and
          above the allowance stop it contradicted. It is only true once the build is actually going ahead. */

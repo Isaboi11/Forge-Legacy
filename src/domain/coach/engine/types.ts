@@ -124,6 +124,8 @@ export interface EngineRefs {
   goalGuessed: boolean;
   /** Holt's notes on them (CA-D2), as last read — a build sends them. */
   heardNotes: string[];
+  /** AI lane (S7): low-stakes answers he assumed for this request, said once before the build. */
+  assumed: string[];
 
   /* ── changing a program already running (S2, `engine/edit.ts`) ── */
   /**
@@ -180,6 +182,7 @@ export const freshRefs = (): EngineRefs => ({
   profileGoal: null,
   goalGuessed: false,
   heardNotes: [],
+  assumed: [],
   edit: null,
   pendingEdit: null,
   lastEdit: null,

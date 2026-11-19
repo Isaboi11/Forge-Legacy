@@ -64,7 +64,10 @@ test('⭐ Benjamin turn 4 — "edit the entire workout to include what I\'ve men
   const said = s.sink.holt().join(' ');
   assert.match(said, /Reworking every session of 8-Week Muscle Block in one go isn't something I can do yet/);
   assert.doesNotMatch(said, /Which session/);
-  assert.deepEqual(s.sink.lastChips(), ['Build the new one', 'One session at a time']);
+  // AI lane (S7, PO D10): said, not tapped — the answer is typed.
+  assert.match(s.sink.holt().at(-1), /Which do you want\?$/);
+  assert.equal(s.sink.turns.filter((t) => t.kind === 'chips').length, 0, 'no buttons in an AI conversation');
+  assert.equal(s.refs.askedAboutReplacing, true, '"build the new one" next builds without asking again');
   assert.equal(s.world.writes.length, 0);
 });
 
@@ -85,7 +88,8 @@ test('the loop breaker: the same question typed-at twice is not asked a second t
   const second = s.sink.holt().at(-1);
   assert.notEqual(second, first);
   assert.match(second, /I still need to know which session/);
-  assert.ok(s.sink.lastChips().includes('Build the new one'));
+  assert.doesNotMatch(second, /tap one/, 'AI lane: nothing to tap');
+  assert.equal(s.sink.turns.filter((t) => t.kind === 'chips').length, 0, 'no buttons in an AI conversation');
 });
 
 test('⭐ tapped edit end to end: sets on a Week 5 session for the rest of the block → saved; Undo puts it back exactly', async () => {

@@ -80,7 +80,7 @@ test('⚠ QA R2-F8 — a request interrupted by the active-program question is k
   const guarded = [
     ...sheet.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(request\)/g), // the request rides along since QA holt-19
     // the typed sentence is the engine's since HL-10 S3
-    ...turn.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(refs, port, sink, request\)/g),
+    ...turn.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(refs, port, sink, request(, hooks\.build\.lane)?\)/g),
   ];
   assert.equal(guarded.length, 3, 'typed sentence, tapped opener, shelf-to-build');
   for (const m of guarded) assert.match(m[1], /setConstraints\(request\);/);

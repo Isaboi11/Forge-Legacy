@@ -94,7 +94,7 @@ test('sheet: a TYPED request meets the active-program question with its words ca
   const GUARDS = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../engine/guards.ts'), 'utf8').replace(/\r\n/g, '\n');
   assert.match(GUARDS, /if \(refs\.typed\.length\) \{\n\s+sink\.say\(\n\s+\{ kind: 'holt', text: typedGuardLine\(active\.name\), live: true \}/);
   assert.match(GUARDS, /\{ label: BUILD_THE_NEW_ONE, patch: \{\} \},\n\s+\{ label: JUST_A_WEEK, patch: \{ weeks: 1 \} \},\n\s+\{ label: KEEP_AND_CHANGE, patch: \{\} \},/);
-  assert.match(SHEET, /engineGuard\(engine\.current, port, sink, request\)/);
+  assert.match(SHEET, /engineGuard\(engine\.current, port, sink, request, laneFor\(premiumAi\)\)/);
 });
 
 // The edit flow is the engine's since HL-10 S2 (engine/__tests__/s2-edit.test.mjs runs it for real).

@@ -138,7 +138,7 @@ test('every screen that can close mid-call aborts the call on close', () => {
     assert.match(read(file), /const closeSignal = useCloseSignal\(\);/, file);
   }
   // The engine's build aborts through the SHEET's close signal, handed in as a hook (HL-10 S4b).
-  assert.match(read('src/components/forge/CoachChatSheet.tsx'), /const buildHooks = useMemo<BuildHooks>\(\n\s+\(\) => \(\{\n\s+gates,\n\s+closeSignal,/);
+  assert.match(read('src/components/forge/CoachChatSheet.tsx'), /const buildHooks = useMemo<BuildHooks>\(\n\s+\(\) => \(\{[\s\S]{0,200}?\n\s+gates,\n\s+closeSignal,/);
   // The sheet stays mounted when it closes, so its close aborts the read itself.
   assert.match(read('src/components/forge/ImportSpreadsheetSheet.tsx'), /gen\.current \+= 1;\n\s*reader\.current\?\.abort\(\);/);
   // One controller per call, every live one aborted on unmount.

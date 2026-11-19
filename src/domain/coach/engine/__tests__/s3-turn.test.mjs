@@ -15,7 +15,7 @@ import { nextQuestion } from '../../chat-core.ts';
 import { limitationPatterns } from '../../rulebook/limitations.ts';
 import { resetVoice } from '../../rulebook/voice.ts';
 import { advance } from '../build.ts';
-import { beginEdit, clearEdit } from '../edit.ts';
+import { clearEdit } from '../edit.ts';
 import { actOn } from '../act.ts';
 import { fakePort, recordingSink } from '../testing.ts';
 import { alsoSaid, process } from '../turn.ts';
@@ -37,6 +37,7 @@ function sheet({ premiumAi = true, kitchen = false, world = benjaminWorld() } = 
   const model = [];
   const seen = { asked: [], stops: [], kitchen: [], taps: [] };
   const build = {
+    lane: premiumAi ? 'ai' : 'tap',
     gates: () => UNCAPPED,
     closeSignal: () => new AbortController().signal,
     stop: (route, text) => seen.stops.push({ route, text }),
@@ -76,7 +77,10 @@ function sheet({ premiumAi = true, kitchen = false, world = benjaminWorld() } = 
        engine's real actOn — planHoltActions, then respondTo — exactly as on the phone after a clean ending. */
     askAloud: async (text, _h, q) => {
       seen.asked.push(text);
-      const actions = model.shift();
+      const reply = model.shift();
+      /* A reply is his words, his tool calls, or both — as coach-ask streams them. */
+      const actions = Array.isArray(reply) ? reply : reply?.actions;
+      if (reply?.say) sink.say({ kind: 'holt', text: reply.say });
       if (actions) {
         await actOn(refs, port, sink, { turn: hooks, knownNotes: () => [], cardContext: async () => ({}), showCard: () => undefined }, actions, text, { done: true, stop: null }, true, q, refs.mode ?? 'program');
       }
@@ -97,41 +101,59 @@ const TURN2 =
 const TURN4 = 'I want to edit the entire workout to include what I’ve mentioned above.';
 const TURN5 = 'I want to replace the entire program';
 
-test('⭐ HL-10 acceptance — Benjamin 11-18, replayed headless through the engine on his block', async () => {
+const TURN3 = 'Change the one I have';
+
+test('⭐ HL-10 + S7 acceptance — Benjamin 11-18 on the AI lane: he types, Holt talks, ZERO buttons, his program safe', async () => {
   const s = sheet();
 
-  // Turn 2: typed → Holt (propose_program) → the active-program question, carrying his words.
+  // Turn 2: typed → Holt (propose_program) → the active-program question, IN WORDS, carrying his words.
   s.model.push([{ name: 'propose_program', input: { goal: 'muscle', daysPerWeek: 5 } }]);
   process(s.refs, s.port, s.sink, s.hooks, TURN2);
   await tick();
   assert.deepEqual(s.seen.asked, [TURN2], 'his sentence went to Holt');
   assert.deepEqual(s.refs.typed, [TURN2], 'and is kept whole for the build');
-  assert.match(s.sink.holt().at(-1), /^You're already running 8-Week Muscle Block\. I can build a new program with everything you just told me/);
-  assert.deepEqual(s.sink.lastChips(), ['Build the new one', 'Just a week instead', 'Keep it and change it']);
+  assert.match(s.sink.holt().at(-1), /^You're already running 8-Week Muscle Block\. I can build a new program with everything you just told me to replace it, build just a week instead, or keep 8-Week Muscle Block and change it\. Which do you want\?$/);
   assert.equal(s.refs.constraints.daysPerWeek, 5, 'the request is in state before the question (R2-F8)');
 
-  // Turn 3: "Keep it and change it" (the sheet's tapChip → beginEdit).
-  await beginEdit(s.refs, s.port, s.sink, s.hooks.edit);
-  assert.match(s.sink.holt().at(-1), /one session at a time/);
-  assert.equal(s.sink.lastChips().length, 10, 'not 22');
+  // Turn 3: he TYPES "Change the one I have" → Holt answers in words (no tool: there is nothing specific to change yet).
+  s.model.push({ say: "Got it — we keep 8-Week Muscle Block. What do you want to change: add core and rear delts, bring in the Peloton, or something else?" });
+  process(s.refs, s.port, s.sink, s.hooks, TURN3);
+  await tick();
+  assert.match(s.sink.holt().at(-1), /What do you want to change/);
 
-  // Turn 4: typed → Holt (propose_program_edit, no day) → told plainly, not "Which session?".
+  // Turn 4: "edit the entire workout…" → told plainly what he can do today, and asked which — in words.
   s.model.push([{ name: 'propose_program_edit', input: { op: 'add', exercise: 'abs' } }]);
   process(s.refs, s.port, s.sink, s.hooks, TURN4);
   await tick();
-  assert.match(s.sink.holt().at(-1), /isn't something I can do yet/);
-  assert.deepEqual(s.sink.lastChips(), ['Build the new one', 'One session at a time']);
+  assert.match(s.sink.holt().at(-1), /isn't something I can do yet.*Which do you want\?$/);
 
-  // Turn 5: typed → Holt (propose_program_edit) → builds the new one from everything he said.
+  // Turn 5: "replace the entire program" → builds the new one from everything he said; the build asks only what it
+  // must, in words (where he trains), having assumed the small things.
   s.model.push([{ name: 'propose_program_edit', input: { op: 'rebuild' } }]);
   process(s.refs, s.port, s.sink, s.hooks, TURN5);
   await tick();
-  assert.equal(s.sink.holt().filter((l) => /Which session should change\?/.test(l)).length, 0, 'never the loop');
   assert.deepEqual(s.refs.typed, [TURN2, TURN5], 'his words carried into the new build');
+  assert.equal(s.refs.constraints.sessionMinutes, 60, 'assumed: about an hour');
+  assert.deepEqual(s.refs.constraints.limitations, [], 'assumed: nothing to work around');
+  // Everything a build needs is known (his goal, days, level, kit) — so he says what he assumed and BUILDS.
+  for (let i = 0; i < 100 && !s.refs.built; i += 1) await tick();
+  assert.ok(s.sink.holt().some((l) => /^I've gone with .*about an hour a session.*nothing to work around/.test(l)), 'the assumptions are said');
+  assert.deepEqual(s.world.authorAsks[0]?.said, [TURN2, TURN5], 'Holt was asked to write it from BOTH of his messages');
+  assert.equal(s.refs.built?.kind, 'program', 'a new program exists to look at');
+  assert.ok(s.sink.turns.some((t) => t.kind === 'program'), 'its card is on screen (Start / Save belong to the card, they are not questions)');
+
+  // The bar (plan §12, PO D10): no button flows in an AI conversation, never the loop, his program never written.
+  assert.equal(s.sink.turns.filter((t) => t.kind === 'chips').length, 0, 'ZERO buttons from start to finish');
+  assert.equal(s.sink.holt().filter((l) => /Which session should change\?/.test(l)).length, 0, 'never the loop');
   assert.equal(s.world.writes.filter((w) => w.kind === 'update').length, 0, 'his running program was never touched');
-  // ⚠ What the TAP lane still does today: the build asks its remaining questions with chips. Step 2's AI lane (S7)
-  // replaces this with Holt asking in words — this assertion is the "before" the S7 test will flip.
-  assert.ok(s.sink.lastChips().length > 0, 'today: a wizard question with chips');
+});
+
+test('the tap lane (free users, AI down) keeps today\'s chips — nothing about it changed', async () => {
+  const s = sheet({ premiumAi: false });
+  s.refs.mode = 'program';
+  s.refs.constraints = { goal: 'muscle', experience: { lifting: 'intermediate', running: 'beginner' } };
+  await advance(s.refs, s.port, s.sink, s.hooks.build, s.refs.constraints, 'program');
+  assert.ok(s.sink.lastChips().length > 0, 'a question with chips');
 });
 
 test('⛔ a person in danger is stopped before anything else — no model, no kitchen', async () => {

@@ -49,6 +49,6 @@ test('the sheet: the day door offers the program session; the running-program qu
   assert.equal((sheet.match(/guardActiveProgram\(\)/g) ?? []).length, 0);
   // The typed sentence's guard is the engine's since HL-10 S3.
   const turn = readFileSync(path.join(here, '../engine/turn.ts'), 'utf8');
-  assert.ok((sheet.match(/guardActiveProgram\(request\)/g) ?? []).length + (turn.match(/guardActiveProgram\(refs, port, sink, request\)/g) ?? []).length >= 3);
+  assert.ok((sheet.match(/guardActiveProgram\(request\)/g) ?? []).length + (turn.match(/guardActiveProgram\(refs, port, sink, request(, hooks\.build\.lane)?\)/g) ?? []).length >= 3);
   assert.match(sheet, /if \(chip\.trainsProgram\) \{[\s\S]{0,300}writeWorkoutLaunch\(\{ programId \}\)/);
 });
