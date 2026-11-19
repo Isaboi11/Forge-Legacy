@@ -31,6 +31,22 @@ import { StopCalls } from '@/components/forge/StopCalls';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { HoltWords } from '@/components/forge/HoltWords';
+import { holtPlainText } from '@/domain/coach/holt-markdown';
+import {
+  BUILD_THE_NEW_ONE,
+  KEEP_AND_CHANGE,
+  LOOP_LINE,
+  ONE_AT_A_TIME,
+  ONE_SESSION_FIRST_LINE,
+  REPLACE_LINE,
+  laterWeekLabel,
+  sameAskAgain,
+  splitSessionPicker,
+  typedGuardLine,
+  wholeProgramAsk,
+  wholeProgramLine,
+  type AskShown,
+} from '@/domain/coach/listens';
 import { AiFeedback } from '@/components/forge/AiFeedback';
 import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
 import { fetchAiCredits } from '@/data/ai-credits-live';
@@ -1402,6 +1418,25 @@ export function CoachChatSheet({
     setBusy(null);
     if (!active) return true;
     askedAboutReplacing.current = true;
+    /*
+     * Holt Listens HL-1d (tester 2026-11-18): when they TYPED what they want, the question carries it - "Build the new
+     * one" builds from their words (the same path as "Replace it"), and he says so, instead of a line that ignores
+     * everything they just told him. A tapped door keeps its old line and chips.
+     */
+    if (typed.current.length) {
+      say(
+        { kind: 'holt', text: typedGuardLine(active.name), live: true },
+        {
+          kind: 'chips',
+          chips: [
+            { label: BUILD_THE_NEW_ONE, patch: {} },
+            { label: JUST_A_WEEK, patch: { weeks: 1 } },
+            { label: KEEP_AND_CHANGE, patch: {} },
+          ],
+        },
+      );
+      return false;
+    }
     say(
       { kind: 'holt', text: `You've already got ${active.name} running. I'm not going to start a second one behind your back.`, live: true },
       {
@@ -1471,6 +1506,7 @@ export function CoachChatSheet({
     setPreview(false);
     setDraft('');
     askedAboutReplacing.current = false;
+    lastEditAsk.current = null;
     beginRequest([]);
     /* Facts about the ATHLETE survive a new conversation; everything situational deliberately does not.
        Their skill level and the kit in their garage did not change because they tapped New chat, and
@@ -1595,15 +1631,37 @@ export function CoachChatSheet({
       return;
     }
     setEdit({ program: active, marks });
+    /* HL-1e (tester 2026-11-18: 22 chips): this week and next as chips, later weeks one more tap (holt-09 still holds). */
+    const { now, laterWeeks } = splitSessionPicker(sessions);
     say(
-      { kind: 'holt', text: pick('ask_edit_session') },
-      { kind: 'chips', chips: sessions.map((sn) => ({ label: sn.label, patch: {}, edit: { step: 'session', ...sn.at } })) },
+      /* HL-1d: a typed request is waiting - he is honest that this flow goes a session at a time. */
+      { kind: 'holt', text: typed.current.length ? ONE_SESSION_FIRST_LINE : pick('ask_edit_session') },
+      {
+        kind: 'chips',
+        chips: [
+          ...now.map((sn) => ({ label: sn.label, patch: {}, edit: { step: 'session' as const, ...sn.at } })),
+          ...laterWeeks.map((w) => ({ label: laterWeekLabel(w), patch: {}, edit: { step: 'week' as const, weekIndex: w } })),
+        ],
+      },
     );
   };
 
   /** One tap inside the flow. Each step narrows and asks the next question. */
   const stepEdit = (pickStep: NonNullable<Chip['edit']>) => {
     if (!edit) return;
+
+    /* HL-1e: a later week, opened - its open sessions as chips. */
+    if (pickStep.step === 'week') {
+      const inWeek = editableSessions(edit.program.structure, edit.marks, Number.POSITIVE_INFINITY).filter(
+        (sn) => sn.at.weekIndex === pickStep.weekIndex,
+      );
+      if (!inWeek.length) return;
+      say(
+        { kind: 'holt', text: `Which session in week ${pickStep.weekIndex + 1}?` },
+        { kind: 'chips', chips: inWeek.map((sn) => ({ label: sn.label, patch: {}, edit: { step: 'session' as const, ...sn.at } })) },
+      );
+      return;
+    }
 
     if (pickStep.step === 'session') {
       const at = { weekIndex: pickStep.weekIndex, dayIndex: pickStep.dayIndex };
@@ -1798,6 +1856,8 @@ export function CoachChatSheet({
     ({ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] }) & { id: number } | null
   >(null);
   const pendingEditAsk = useRef<{ intent: EditIntent; ask: string } | null>(null);
+  /** The last question the typed-edit flow put to them (HL-1c) - the same one is never asked twice in a row. */
+  const lastEditAsk = useRef<AskShown | null>(null);
   /** The athlete's own words that started this change — shown as "You asked" on the updated workout. */
   const editAsked = useRef<string | null>(null);
 
@@ -1809,6 +1869,26 @@ export function CoachChatSheet({
    * count never moves) holds exactly as it does in the tapped flow. Nothing saves until they say so.
    */
   /* `wanted`, not `intent`: the sheet's own `intent` prop is in scope here (C-I7 — no name shadows another). */
+  /**
+   * HL-1d/1c: a new program in place of the running one, built from everything they have said (`typed`, kept since the
+   * request began) plus `said`. The same build "Replace it" runs; they asked for it outright, so the active-program
+   * question is not put to them again. Starting it still asks by name before anything ends (`startNow`, fails closed).
+   */
+  const buildTheNewOne = (said: string | undefined, line: string) => {
+    setEdit(null);
+    pendingEdit.current = null;
+    pendingEditAsk.current = null;
+    lastEditAsk.current = null;
+    askedAboutReplacing.current = true;
+    if (said) alsoSaid(said);
+    if (mode !== 'program') {
+      /* Not mid-build (the Adjust door, or a day): this is the BUILD door's request, so it pays what that door pays. */
+      if (blockDoorRefuses(constraints.weeks)) return;
+      setMode('program');
+    }
+    void advance(constraints, 'program', line);
+  };
+
   const editByWords = async (wanted: EditIntent, said?: string) => {
     if (said) editAsked.current = said;
     setBusy('thinking');
@@ -1827,7 +1907,49 @@ export function CoachChatSheet({
     ]);
     setBusy(null);
     const res = resolveEditIntent(wanted, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
+    /*
+     * == HOLT LISTENS (HL-1c, tester 2026-11-18) == "Edit the entire workout", "replace the entire program" reached here
+     * and came back as "Which session should change?" - every time. A whole-program ask is not a session ask: "replace"
+     * builds the new one from everything they have said, "the whole thing" is told plainly what he can do today.
+     */
+    if (!res.ok && res.ask === 'which_day') {
+      const whole = wholeProgramAsk(said);
+      if (whole === 'replace') {
+        pendingEditAsk.current = null;
+        lastEditAsk.current = null;
+        return void buildTheNewOne(said, REPLACE_LINE);
+      }
+      /* ⚠ NOT for a named row change: "swap bench everywhere" / "4 sets of curls on every day" already work — which
+         session, then "the rest of the block" — so they keep that road. Only a change with no single movement in it
+         (add core, rebuild, more volume) is the whole-block rewrite this flow cannot do yet. */
+      const rowChange = !!wanted.exercise && wanted.op !== 'add' && wanted.op !== 'rebuild' && wanted.op !== 'volume';
+      if (whole === 'whole' && !rowChange) {
+        pendingEditAsk.current = null;
+        lastEditAsk.current = null;
+        say(
+          { kind: 'holt', text: wholeProgramLine(active.name) },
+          { kind: 'chips', chips: [{ label: BUILD_THE_NEW_ONE, patch: {} }, { label: ONE_AT_A_TIME, patch: {} }] },
+        );
+        return;
+      }
+    }
+    if (!res.ok && res.ask !== 'not_editable' && said && sameAskAgain(lastEditAsk.current, { ask: res.ask, message: res.message })) {
+      /* The loop breaker: they typed instead of tapping, and the resolver would ask the very same thing again. */
+      pendingEditAsk.current = { intent: res.retarget ? { ...wanted, op: res.retarget } : wanted, ask: res.ask };
+      say(
+        { kind: 'holt', text: LOOP_LINE },
+        {
+          kind: 'chips',
+          chips: [
+            ...res.options.slice(0, 6).map((o) => ({ label: o, patch: {}, typedEdit: 'answer' as const })),
+            { label: BUILD_THE_NEW_ONE, patch: {} },
+          ],
+        },
+      );
+      return;
+    }
     if (!res.ok) {
+      lastEditAsk.current = res.ask === 'not_editable' ? null : { ask: res.ask, message: res.message };
       /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
       pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...wanted, op: res.retarget } : wanted, ask: res.ask };
       say(
@@ -1840,6 +1962,7 @@ export function CoachChatSheet({
     }
     pendingEdit.current = { programId: active.id, before: active.structure, plan: res.plan };
     pendingEditAsk.current = null;
+    lastEditAsk.current = null;
     /*
      * ⚠ EVERY CONFIRM NAMES THE PROGRAM IT TOUCHES (holtai-02). A typed change only reaches the one running;
      * "In my QA Holt Plan, swap…" was confirmed as a bare "Week 1, Push — …" and landed in another program.
@@ -2011,7 +2134,7 @@ export function CoachChatSheet({
       return;
     }
     /* holtai-06 (QA holt-04): he changes it here, the way "Change my program" does — not a bare hop to Workouts. */
-    if (chip.label === 'Change the one I have') {
+    if (chip.label === 'Change the one I have' || chip.label === KEEP_AND_CHANGE || chip.label === ONE_AT_A_TIME) {
       say({ kind: 'me', text: chip.label });
       void beginEdit();
       return;
@@ -2019,6 +2142,12 @@ export function CoachChatSheet({
     if (chip.label === 'Replace it') {
       say({ kind: 'me', text: chip.label });
       void advance(constraints, mode ?? 'program', 'Okay.');
+      return;
+    }
+    /* HL-1d: "Build the new one" - from the active-program question or the edit flow - builds from what they said. */
+    if (chip.label === BUILD_THE_NEW_ONE) {
+      say({ kind: 'me', text: chip.label });
+      void buildTheNewOne(undefined, 'Okay.');
       return;
     }
 
@@ -4793,7 +4922,8 @@ function ReplyTools({ text, onRegenerate, onEdit }: { text: string; onRegenerate
     return () => clearTimeout(t);
   }, [copied]);
   const copy = () => {
-    void Clipboard.setStringAsync(text).then(
+    /* HL-1a: the words as read — no `**`, bullets as dots (`holtPlainText`). */
+    void Clipboard.setStringAsync(holtPlainText(text)).then(
       () => setCopied(true),
       () => undefined,
     );

@@ -71,7 +71,7 @@ test('Stop goes through the same abort as closing the sheet (coach-ask settles i
 });
 
 test('the reply controls: Copy on every finished AI reply, Regenerate + Edit only on the last', () => {
-  assert.match(SHEET, /Clipboard\.setStringAsync\(text\)/);
+  assert.match(SHEET, /Clipboard\.setStringAsync\(holtPlainText\(text\)\)/); // HL-1a: the words as read, no `**`
   assert.match(SHEET, /lastReplySid\(thread\)/);
   assert.match(SHEET, /accessibilityLabel="Stop Holt's reply"/);
 });
