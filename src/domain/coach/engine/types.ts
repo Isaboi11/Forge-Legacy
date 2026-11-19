@@ -70,6 +70,11 @@ export interface EnginePort {
     author(req: AuthorRequest, signal?: AbortSignal): Promise<Refundable<AuthorResult> | NoAiConsent>;
     /** The built-in shelf. */
     definitions(): readonly ProgramDefinition[];
+    /**
+     * Holt rewrites the weeks ahead (PO D12) — the rewriter's JSON text, or why not. ⚠ Not deployed yet: the live port
+     * answers `unavailable` until its function exists; only an app sending caps `change_v1` is offered the tool.
+     */
+    rewrite(userTurn: string): Promise<{ kind: 'ok'; text: string } | { kind: 'unavailable' | 'offline' | 'out_of_credits' }>;
     /** `consume_holt_allowance` — the only spend of the free allowance; null = unreadable. */
     spend(kind: 'program' | 'day'): Promise<{ allowed: boolean; used: number; allowance: number } | null>;
   };
@@ -139,7 +144,14 @@ export interface EngineRefs {
    * The last change Holt made, so "Undo" can put it back (Coach-Holt-Everywhere rule 2). One level: the
    * structure as it was before, or the sessions a skip marked. Cleared the moment it is used.
    */
-  lastEdit: (({ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] }) & { id: number }) | null;
+  lastEdit:
+    | ((
+        | { programId: string; before: ProgramStructure; rested?: { weekIndex: number; dayIndex: number }[] }
+        | { programId: string; skipped: SessionMark[] }
+      ) & { id: number })
+    | null;
+  /** A rewrite waiting for "Do it" (PO D12): the checked structure and the rest marks it brings. */
+  pendingRewrite: { programId: string; before: ProgramStructure; after: ProgramStructure; rest: { weekIndex: number; dayIndex: number }[]; what: string } | null;
   /** The question the typed flow is waiting on. */
   pendingEditAsk: { intent: EditIntent; ask: string } | null;
   /** The last question the typed-edit flow put to them (HL-1c) — never the same one twice in a row. */
@@ -186,6 +198,7 @@ export const freshRefs = (): EngineRefs => ({
   edit: null,
   pendingEdit: null,
   lastEdit: null,
+  pendingRewrite: null,
   pendingEditAsk: null,
   lastEditAsk: null,
   editAsked: null,

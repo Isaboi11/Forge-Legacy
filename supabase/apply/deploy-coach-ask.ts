@@ -1041,6 +1041,24 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
     },
 ];
 export const ASK_ACTION_V1_NAMES: readonly string[] = ASK_ACTIONS_V1.map((a) => a.name);
+export const ASK_ACTION_CHANGE: AskToolDef = {
+    name: 'propose_program_change',
+    description: "Change the program the athlete is running \u2014 ANY change, any size: add or drop movements or a muscle group, more or less volume, more variety, use their equipment, supersets, a different focus or goal (lose fat, get stronger), less or more running, rest days, a run swapped for a ride, slimmed down or beefed up, a session they don't like reworked. The app rewrites the weeks still ahead from your brief, checks them and shows the athlete a before/after card to confirm \u2014 you never write the program yourself and never say it is done. Put their ask and your plan in the brief. Use propose_program instead only when they want a brand-new program in place of this one.",
+    input_schema: {
+        type: 'object',
+        properties: {
+            brief: {
+                type: 'string',
+                description: "What they asked, in their words, then your plan in a sentence or two ('More rear delts. Face pulls on Pull and Upper, at least twice a week.'). Never a weight, a body symptom or anything medical.",
+            },
+        },
+        required: ['brief'],
+        additionalProperties: false,
+    },
+};
+export const CHANGE_PROMPT = `# Changing the program they run
+
+When the athlete wants the program they are running changed in any way \u2014 a session they don't like, more of a muscle, less running, more rest, more variety, a new focus, slimmed down or beefed up \u2014 call propose_program_change with a brief: their ask and your plan. Say your plan in one or two short sentences as you call it (which sessions, what goes in, what comes out, and why). One call covers the whole change, however big; propose_program_edit is only for one quick exact change they spelled out ("swap bench for dumbbell press on Monday"). A brand-new program in place of this one is propose_program. Pain or an injury is still medical_stop and no change.`;
 export const SCHEDULE_SESSION_TOOL: AskToolDef = {
     name: 'schedule_session',
     description: "Put a session on a day ('put a run on Saturday', 'schedule leg day for tomorrow'). Copy the day as they said it; the app works out the date.",
@@ -1057,6 +1075,9 @@ export const SCHEDULE_SESSION_TOOL: AskToolDef = {
 export function actionAckV1(name: string): string {
     if (name === 'propose_program_edit' || name === 'offer_online_recipe_search')
         return actionAck(name);
+    if (name === 'propose_program_change') {
+        return 'The app is rewriting the weeks ahead from your brief and will show the athlete exactly what changes, to confirm. Do not list the changes or say it is done. If you have not yet said your plan in a sentence or two, say it now.';
+    }
     if (name === 'open_door')
         return 'The app is showing the athlete a button to that screen. In one short line, say it is there. Do not say you opened it.';
     if (name === 'remember_note')
@@ -2636,6 +2657,8 @@ export function askFailureEvent(failure: AskTurnFailure, settled: {
 }
 export const meterInt = (v: unknown, max: number): number => Math.min(max, Math.max(0, Math.round(finiteOr0(v))));
 export const HOLT_ACTION_CAPS = 'actions_v1';
+export const CHANGE_CAPS = 'change_v1';
+export const CHANGE_ACTIONS = ['propose_program_change'] as const;
 export const LEGACY_ACTIONS = ['propose_program_edit', 'offer_online_recipe_search'] as const;
 export const NEW_ACTIONS = [
     'propose_program',
@@ -2649,8 +2672,11 @@ export const NEW_ACTIONS = [
     'schedule_session',
     'set_targets',
 ] as const;
-export type HoltActionName = (typeof LEGACY_ACTIONS)[number] | (typeof NEW_ACTIONS)[number];
-export const isHoltAction = (name: unknown): name is HoltActionName => typeof name === 'string' && ((LEGACY_ACTIONS as readonly string[]).includes(name) || (NEW_ACTIONS as readonly string[]).includes(name));
+export type HoltActionName = (typeof LEGACY_ACTIONS)[number] | (typeof NEW_ACTIONS)[number] | (typeof CHANGE_ACTIONS)[number];
+export const isHoltAction = (name: unknown): name is HoltActionName => typeof name === 'string' &&
+    ((LEGACY_ACTIONS as readonly string[]).includes(name) ||
+        (NEW_ACTIONS as readonly string[]).includes(name) ||
+        (CHANGE_ACTIONS as readonly string[]).includes(name));
 export const DOORS = ['import', 'pick', 'meal_plan', 'targets', 'form_check'] as const;
 export type Door = (typeof DOORS)[number];
 export function cardsMayShow(end: {
@@ -3601,6 +3627,9 @@ If you do not know where something is, say so rather than inventing a screen. Ne
 const SYSTEM_V1_FOOD = `${SYSTEM_V1}
 
 ${FOOD_PROMPT}`;
+const SYSTEM_V1_FOOD_CHANGE = `${SYSTEM_V1_FOOD}
+
+${CHANGE_PROMPT}`;
 interface Body {
     question: string;
     history?: unknown;
@@ -3990,6 +4019,7 @@ Deno.serve(async (req) => {
     const allowWeb = body.allowWeb === true;
     const action = allowWeb ? 'web' : 'message';
     const v1 = Array.isArray(body.caps) && body.caps.includes(HOLT_ACTION_CAPS);
+    const change = v1 && Array.isArray(body.caps) && body.caps.includes(CHANGE_CAPS);
     const { data: reserveRow, error: reserveError } = await supabase
         .rpc('coach_ai_reserve', { p_action: action, p_fn: 'coach-ask' })
         .maybeSingle();
@@ -4049,9 +4079,11 @@ Deno.serve(async (req) => {
             } | null;
         };
     }) => r.data.user?.id ?? null, () => null));
-    const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS] : [...ASK_TOOLS, ...ASK_ACTIONS];
-    const PROMPT = v1 ? SYSTEM_V1_FOOD : SYSTEM;
-    const forwards: readonly string[] = v1 ? [...LEGACY_ACTIONS, ...NEW_ACTIONS] : ASK_ACTION_NAMES;
+    const TOOLS = v1
+        ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ...(change ? [ASK_ACTION_CHANGE] : [])]
+        : [...ASK_TOOLS, ...ASK_ACTIONS];
+    const PROMPT = v1 ? (change ? SYSTEM_V1_FOOD_CHANGE : SYSTEM_V1_FOOD) : SYSTEM;
+    const forwards: readonly string[] = v1 ? [...LEGACY_ACTIONS, ...NEW_ACTIONS, ...(change ? CHANGE_ACTIONS : [])] : ASK_ACTION_NAMES;
     const foodReads: readonly string[] = v1 ? FOOD_TOOLS.map((t) => t.name) : [];
     const seenFoods = new Map<string, unknown>();
     const convo: {

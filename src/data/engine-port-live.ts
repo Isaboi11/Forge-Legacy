@@ -39,6 +39,8 @@ export function livePort(): EnginePort {
       recent: () => fetchRecentWork(),
       author: (req, signal) => authorLive(req, signal),
       definitions: () => getProgramDefinitions(),
+      /* ⚠ Not deployed yet (PO D12 work in progress): no app sends caps `change_v1`, so nothing reaches this. */
+      rewrite: async () => ({ kind: 'unavailable' as const }),
       spend: (kind) => consumeHoltAllowance(kind),
     },
     drafts: {

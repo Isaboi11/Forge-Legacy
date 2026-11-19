@@ -52,6 +52,9 @@ export interface FakeWorld {
   authorReplies: unknown[];
   /** Every request the writer was sent — the harness checks what Holt was TOLD, not only what came back. */
   authorAsks: unknown[];
+  /** The rewriter's scripted replies (JSON text) and the user turns it was sent. */
+  rewriteReplies: string[];
+  rewriteAsks: string[];
   /** The free allowance's answer to a spend. Default: allowed. */
   spendReply: { allowed: boolean; used: number; allowance: number } | null;
 }
@@ -75,6 +78,8 @@ export function fakePort(opts: FakePortOptions = {}): { port: EnginePort; world:
     writes: [],
     authorReplies: [],
     authorAsks: [],
+    rewriteReplies: [],
+    rewriteAsks: [],
     spendReply: { allowed: true, used: 1, allowance: 99 },
   };
   const now = opts.now ?? new Date('2026-11-18T18:00:00Z');
@@ -116,6 +121,12 @@ export function fakePort(opts: FakePortOptions = {}): { port: EnginePort; world:
         return (world.authorReplies.shift() ?? { kind: 'none' }) as Awaited<ReturnType<EnginePort['build']['author']>>;
       },
       definitions: () => (opts.definitions ?? []) as ReturnType<EnginePort['build']['definitions']>,
+      /* The rewriter, scripted: the next of `rewriteReplies` (JSON text), else unavailable. Asks are recorded. */
+      rewrite: async (userTurn) => {
+        world.rewriteAsks.push(userTurn);
+        const next = world.rewriteReplies.shift();
+        return next == null ? { kind: 'unavailable' as const } : { kind: 'ok' as const, text: next };
+      },
       spend: async (what) => {
         world.writes.push({ kind: 'spend', what });
         return world.spendReply;

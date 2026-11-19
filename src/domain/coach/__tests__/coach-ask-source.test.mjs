@@ -70,7 +70,9 @@ test('the context goes in the final USER turn, never the system block', () => {
   // The system block is one cached constant with nothing interpolated into it.
   // Sprint 4a: SYSTEM for an app without caps, SYSTEM_V1 for one with `actions_v1` — each one cached constant.
   assert.match(SRC, /system: \[\{ type: 'text', text: PROMPT, cache_control: \{ type: 'ephemeral' \} \}\]/);
-  assert.match(SRC, /const PROMPT = v1 \? SYSTEM_V1_FOOD : SYSTEM;/);
+  // Holt Listens (PO D12): `change_v1` beside `actions_v1` gets SYSTEM_V1_FOOD + CHANGE_PROMPT — a third cached constant.
+  assert.match(SRC, /const PROMPT = v1 \? \(change \? SYSTEM_V1_FOOD_CHANGE : SYSTEM_V1_FOOD\) : SYSTEM;/);
+  assert.match(SRC, /const change = v1 && Array\.isArray\(body\.caps\) && body\.caps\.includes\(CHANGE_CAPS\);/);
   const system = SRC.slice(SRC.indexOf('const SYSTEM = `'), SRC.indexOf('`;', SRC.indexOf('const SYSTEM = `')));
   assert.ok(!system.includes('${'), 'SYSTEM must not interpolate anything — it is the cache key');
   // Sonnet 5 caches a 1024+ token prefix; ~4 characters a token, with margin.

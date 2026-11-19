@@ -148,6 +148,8 @@ export type HoltActionStep =
   | { kind: 'patch'; patch: Record<string, unknown>; name: 'propose_program' | 'propose_day' }
   | { kind: 'door'; to: 'build' | 'build_day' | 'import' | 'pick' }
   | { kind: 'edit'; edit: EditIntent }
+  /** Holt Listens (PO D12): any change to the running program — the app rewrites from his brief and checks it. */
+  | { kind: 'change'; brief: string }
   | { kind: 'web'; lookingFor: string }
   | { kind: 'card'; action: HoltAction };
 
@@ -157,7 +159,7 @@ export interface HoltActionPlan {
   dropped: string[];
 }
 
-const FLOW = new Set(['patch', 'door', 'edit']);
+const FLOW = new Set(['patch', 'door', 'edit', 'change']);
 
 /**
  * ⛔ §1.3 FIRST: `clean` is `cardsMayShow(...)` for the turn. A refusal, a retract, an error, a length cut, a timeout,
@@ -179,6 +181,12 @@ export function planHoltActions(
       else steps.push(s);
     };
     switch (a.name) {
+      case 'propose_program_change': {
+        const brief = typeof input.brief === 'string' ? input.brief.trim().slice(0, 800) : '';
+        if (brief) flow({ kind: 'change', brief });
+        else dropped.push(a.name);
+        break;
+      }
       case 'propose_program_edit': {
         const edit = narrowEdit(input);
         if (edit) flow({ kind: 'edit', edit });

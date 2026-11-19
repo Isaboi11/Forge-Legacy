@@ -434,6 +434,34 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
 export const ASK_ACTION_V1_NAMES: readonly string[] = ASK_ACTIONS_V1.map((a) => a.name);
 
 /**
+ * ══ ONE TOOL FOR ANY CHANGE (Holt Listens, PO D12 2026-11-19 — caps `change_v1` only) ══ "This is AI — I shouldn't have
+ * to give every example." Holt says what the athlete wants and his plan; the app's rewriter writes the new weeks
+ * (`rewrite.ts`), the checker gates them (`engine/checker.ts`), and the athlete sees one before/after card.
+ */
+export const ASK_ACTION_CHANGE: AskToolDef = {
+  name: 'propose_program_change',
+  description:
+    "Change the program the athlete is running — ANY change, any size: add or drop movements or a muscle group, more or less volume, more variety, use their equipment, supersets, a different focus or goal (lose fat, get stronger), less or more running, rest days, a run swapped for a ride, slimmed down or beefed up, a session they don't like reworked. The app rewrites the weeks still ahead from your brief, checks them and shows the athlete a before/after card to confirm — you never write the program yourself and never say it is done. Put their ask and your plan in the brief. Use propose_program instead only when they want a brand-new program in place of this one.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      brief: {
+        type: 'string',
+        description:
+          "What they asked, in their words, then your plan in a sentence or two ('More rear delts. Face pulls on Pull and Upper, at least twice a week.'). Never a weight, a body symptom or anything medical.",
+      },
+    },
+    required: ['brief'],
+    additionalProperties: false,
+  },
+};
+
+/** The caps prompt's paragraph for `change_v1` — appended after the one-brain prompt, its own cached prefix. */
+export const CHANGE_PROMPT = `# Changing the program they run
+
+When the athlete wants the program they are running changed in any way — a session they don't like, more of a muscle, less running, more rest, more variety, a new focus, slimmed down or beefed up — call propose_program_change with a brief: their ask and your plan. Say your plan in one or two short sentences as you call it (which sessions, what goes in, what comes out, and why). One call covers the whole change, however big; propose_program_edit is only for one quick exact change they spelled out ("swap bench for dumbbell press on Monday"). A brand-new program in place of this one is propose_program. Pain or an injury is still medical_stop and no change.`;
+
+/**
  * ⚠ WRITTEN, NOT OFFERED (integrator 2026-11-18, pending a PO call): the app has nowhere to keep a session on a date
  * (programs are sequential; Calendar's scheduled-workout store was never built — lane C's report §1). Lane C's card
  * resolves the day and then says it cannot, with no Confirm. Kept here, out of ASK_ACTIONS_V1, so the caps prefix
@@ -460,6 +488,9 @@ export const SCHEDULE_SESSION_TOOL: AskToolDef = {
  */
 export function actionAckV1(name: string): string {
   if (name === 'propose_program_edit' || name === 'offer_online_recipe_search') return actionAck(name);
+  if (name === 'propose_program_change') {
+    return 'The app is rewriting the weeks ahead from your brief and will show the athlete exactly what changes, to confirm. Do not list the changes or say it is done. If you have not yet said your plan in a sentence or two, say it now.';
+  }
   if (name === 'open_door') return 'The app is showing the athlete a button to that screen. In one short line, say it is there. Do not say you opened it.';
   if (name === 'remember_note') return 'The app is asking the athlete whether to keep this note. Do not say you saved it. Say nothing about it unless they asked you to remember it.';
   if (name === 'propose_program' || name === 'propose_day') {

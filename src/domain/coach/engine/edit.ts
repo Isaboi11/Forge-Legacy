@@ -48,6 +48,7 @@ import {
 } from '../listens.ts';
 import { pick } from '../rulebook/voice.ts';
 import { activeOrNull } from './guards.ts';
+import { applyRewrite } from './change.ts';
 import { optionsInWords } from './lane.ts';
 import type { EnginePort, EngineRefs, EngineSink } from './types.ts';
 
@@ -452,6 +453,14 @@ export async function finishTypedEdit(refs: EngineRefs, port: EnginePort, sink: 
                   : { ...p.intent, sets: n };
     return editByWords(refs, port, sink, hooks, next);
   }
+  /* A rewrite waiting for "Do it" (PO D12) answers apply/cancel first. */
+  if (refs.pendingRewrite && (chip.typedEdit === 'apply' || chip.typedEdit === 'this_week' || chip.typedEdit === 'rest_of_block')) {
+    if (await applyRewrite(refs, port, sink)) return;
+  }
+  if (chip.typedEdit === 'cancel' && refs.pendingRewrite) {
+    refs.pendingRewrite = null;
+    return sink.say({ kind: 'holt', text: 'Left it as it was.' });
+  }
   if (chip.typedEdit === 'cancel') {
     refs.pendingEdit = null;
     return sink.say({ kind: 'holt', text: 'Left it as it was.' });
@@ -468,8 +477,11 @@ export async function finishTypedEdit(refs: EngineRefs, port: EnginePort, sink: 
     try {
       /* The structure goes back exactly as it was; a skip is un-marked session by session. Both keep
          the session count, so the live-edit guard (0123/0175) has nothing to refuse. */
-      if ('before' in le) await port.programs.update(le.programId, le.before);
-      else for (const at of le.skipped) await port.programs.unskip(le.programId, at.weekIndex, at.dayIndex);
+      if ('before' in le) {
+        await port.programs.update(le.programId, le.before);
+        /* A rewrite's rest days come back as sessions too. */
+        for (const at of le.rested ?? []) await port.programs.unskip(le.programId, at.weekIndex, at.dayIndex);
+      } else for (const at of le.skipped) await port.programs.unskip(le.programId, at.weekIndex, at.dayIndex);
       sink.say({ kind: 'holt', text: 'Put it back the way it was.' });
     } catch (e) {
       sink.say({ kind: 'error', text: 'That did not undo.', sub: e instanceof Error ? e.message : String(e), action: 'Open the program to check it.' });

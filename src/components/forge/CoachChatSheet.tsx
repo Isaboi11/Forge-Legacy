@@ -1696,6 +1696,7 @@ export function CoachChatSheet({
         knownNotes: () => notesRef.current ?? engine.current.heardNotes,
         cardContext: () => liveCardContext({ units, nutritionAccess }),
         showCard,
+        canDo: canDoExercise,
       },
       actions,
       asked,

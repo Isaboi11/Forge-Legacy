@@ -103,9 +103,11 @@ import {
 import {
   actionAck,
   actionAckV1,
+  ASK_ACTION_CHANGE,
   ASK_ACTION_NAMES,
   ASK_ACTIONS,
   ASK_ACTIONS_V1,
+  CHANGE_PROMPT,
   ASK_TOOL_ROUNDS,
   ASK_TOOLS,
   cleanSummary,
@@ -138,7 +140,7 @@ import {
 } from '../../../src/domain/coach/ask-turn.ts';
 // ⚠ HOLT CAN DO THINGS (Sprint 4a, CH-3) — the caps flag and the action names (the shared contract), and lane B's food
 // lookup and food actions. Both import-free; both inlined into the paste copy. Offered ONLY with caps `actions_v1`.
-import { HOLT_ACTION_CAPS, LEGACY_ACTIONS, NEW_ACTIONS } from '../../../src/domain/coach/holt-actions.ts';
+import { CHANGE_ACTIONS, CHANGE_CAPS, HOLT_ACTION_CAPS, LEGACY_ACTIONS, NEW_ACTIONS } from '../../../src/domain/coach/holt-actions.ts';
 import { checkFoodAction, FOOD_ACTION_NAMES, FOOD_ACTIONS, FOOD_PROMPT, FOOD_TOOLS, foodActionAck, runFoodTool } from '../../../src/domain/coach/ask-food-tools.ts';
 // ⚠ HOLT REMEMBERS YOU (Sprint 4b, CH-4) — the memory caps, the memory filter, the recap and the memory summary. Import-
 // free, inlined into the paste copy. Read ONLY with caps `memory_v1`; the off switch (0278) is read for every app.
@@ -483,6 +485,14 @@ If you do not know where something is, say so rather than inventing a screen. Ne
 const SYSTEM_V1_FOOD = `${SYSTEM_V1}
 
 ${FOOD_PROMPT}`;
+
+/**
+ * Holt Listens (PO D12, 2026-11-19) — caps `change_v1` beside `actions_v1`: the one-brain prompt plus one paragraph for
+ * `propose_program_change`. Its own cached prefix; without `change_v1` every byte is v30's.
+ */
+const SYSTEM_V1_FOOD_CHANGE = `${SYSTEM_V1_FOOD}
+
+${CHANGE_PROMPT}`;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -981,6 +991,8 @@ Deno.serve(async (req) => {
   // ── Sprint 4a §1.1: THE CAPS FLAG. Only an app that can draw the cards gets the actions, the food lookup, the one-brain
   // prompt and status detail. Without it every byte below is the v28 function's.
   const v1 = Array.isArray(body.caps) && body.caps.includes(HOLT_ACTION_CAPS);
+  // Holt Listens (PO D12): one tool for ANY change to the running program — only beside actions_v1, only when asked for.
+  const change = v1 && Array.isArray(body.caps) && body.caps.includes(CHANGE_CAPS);
   const { data: reserveRow, error: reserveError } = await supabase
     .rpc('coach_ai_reserve', { p_action: action, p_fn: 'coach-ask' })
     .maybeSingle();
@@ -1073,10 +1085,12 @@ Deno.serve(async (req) => {
     ));
 
   // Sprint 4a: what this turn offers, fixed per caps value so each keeps ONE stable cached prefix — reads, then actions.
-  const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS] : [...ASK_TOOLS, ...ASK_ACTIONS];
-  const PROMPT = v1 ? SYSTEM_V1_FOOD : SYSTEM;
+  const TOOLS = v1
+    ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ...(change ? [ASK_ACTION_CHANGE] : [])]
+    : [...ASK_TOOLS, ...ASK_ACTIONS];
+  const PROMPT = v1 ? (change ? SYSTEM_V1_FOOD_CHANGE : SYSTEM_V1_FOOD) : SYSTEM;
   /** What is forwarded to the app instead of run here. With caps: every name in the contract (holt-actions.ts). */
-  const forwards: readonly string[] = v1 ? [...LEGACY_ACTIONS, ...NEW_ACTIONS] : ASK_ACTION_NAMES;
+  const forwards: readonly string[] = v1 ? [...LEGACY_ACTIONS, ...NEW_ACTIONS, ...(change ? CHANGE_ACTIONS : [])] : ASK_ACTION_NAMES;
   const foodReads: readonly string[] = v1 ? FOOD_TOOLS.map((t) => t.name) : [];
   /** HF-D4: the foods `get_foods` returned THIS turn, by key — a food action may name only these. */
   const seenFoods = new Map<string, unknown>();

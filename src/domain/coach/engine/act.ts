@@ -18,6 +18,8 @@ import { CARD_DROPPED_LINE, planHoltActions } from '../ask-outcome.ts';
 import type { ChatMode, ChatState, nextQuestion } from '../chat-core.ts';
 import { holdTurnActions, type CardContext, type ShownCard, type TurnEnd } from '../holt-action-cards.ts';
 import { localToday } from '../../nutrition/day.ts';
+import type { EquipmentGate } from '../candidates.ts';
+import { proposeChange } from './change.ts';
 import { respondTo, type TurnHooks } from './turn.ts';
 import type { EnginePort, EngineRefs, EngineSink } from './types.ts';
 
@@ -30,6 +32,8 @@ export interface ActHooks {
   cardContext(): Promise<CardContext>;
   /** Put a drawn card on screen (the sheet keeps its id and Undo token). */
   showCard(card: ShownCard): void;
+  /** The kit gate a rewrite is checked with (`canDoExercise` on the phone). */
+  canDo: EquipmentGate;
 }
 
 /** True when something was shown, so the caller adds nothing on top; `flow` when it carried on a build or a change. */
@@ -72,6 +76,10 @@ export async function actOn(
         break;
       case 'patch':
         await respondTo(refs, port, sink, hooks.turn, { kind: 'patch', patch: step.patch as Partial<ChatState>, say: null, remaining: null }, asked, q, m);
+        shown = flow = true;
+        break;
+      case 'change':
+        await proposeChange(refs, port, sink, { canDo: hooks.canDo }, step.brief, asked);
         shown = flow = true;
         break;
       case 'web':

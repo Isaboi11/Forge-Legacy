@@ -12,6 +12,13 @@
 /** What a new app sends in `coach-ask`'s body. Without it, the function offers only the v28 tools (§1.1). */
 export const HOLT_ACTION_CAPS = 'actions_v1';
 
+/**
+ * Holt Listens (PO D12, 2026-11-19): "AI rewrites, the app checks". An app that sends this beside `actions_v1` is offered
+ * `propose_program_change` — one tool for ANY change to the program they run. Old apps never see it.
+ */
+export const CHANGE_CAPS = 'change_v1';
+export const CHANGE_ACTIONS = ['propose_program_change'] as const;
+
 /** Actions every shipped app already understands. */
 export const LEGACY_ACTIONS = ['propose_program_edit', 'offer_online_recipe_search'] as const;
 
@@ -29,10 +36,13 @@ export const NEW_ACTIONS = [
   'set_targets',
 ] as const;
 
-export type HoltActionName = (typeof LEGACY_ACTIONS)[number] | (typeof NEW_ACTIONS)[number];
+export type HoltActionName = (typeof LEGACY_ACTIONS)[number] | (typeof NEW_ACTIONS)[number] | (typeof CHANGE_ACTIONS)[number];
 
 export const isHoltAction = (name: unknown): name is HoltActionName =>
-  typeof name === 'string' && ((LEGACY_ACTIONS as readonly string[]).includes(name) || (NEW_ACTIONS as readonly string[]).includes(name));
+  typeof name === 'string' &&
+  ((LEGACY_ACTIONS as readonly string[]).includes(name) ||
+    (NEW_ACTIONS as readonly string[]).includes(name) ||
+    (CHANGE_ACTIONS as readonly string[]).includes(name));
 
 /** Where `open_door` may go. Navigation only — no write. */
 export const DOORS = ['import', 'pick', 'meal_plan', 'targets', 'form_check'] as const;
