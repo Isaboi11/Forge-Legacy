@@ -17,11 +17,12 @@ import { BENJAMIN_KIT, benjaminWorld, catalog } from './fixtures.mjs';
 
 const athlete = { experience: 'intermediate', environment: 'home', ownedEquipment: BENJAMIN_KIT, limitations: [] };
 
-test('⭐ a session written once lands in every remaining week, kept movements keep THAT week\'s sets and reps', () => {
+test('⭐ a session written once lands in every remaining week; copied numbers keep each week\'s own progression', () => {
   const { active, marks } = benjaminWorld();
   const s = active.structure;
-  const pull = trainingDays(plannedDays(s, 4)).find((d) => d.name === 'Pull');
-  const rows = pull.main.map((e) => ({ key: e.catalogKey, part: 'main', sets: 9, reps: 9, repsTo: 0, seconds: 0, miles: 0, group: '' }));
+  // He writes against the first week he was shown (week 4), copying its numbers for what he keeps.
+  const pull = trainingDays(plannedDays(s, 3)).find((d) => d.name === 'Pull');
+  const rows = pull.main.map((e) => ({ key: e.catalogKey, part: 'main', sets: e.sets, reps: e.reps, repsTo: e.repsMax ?? 0, seconds: 0, miles: 0, group: '' }));
   const text = JSON.stringify({
     say: 'Face pulls on every Pull day.',
     sessions: [{ name: 'Pull', rows: [...rows, { key: 'cable-face-pull', part: 'main', sets: 3, reps: 15, repsTo: 0, seconds: 0, miles: 0, group: 'A' }] }],
@@ -36,7 +37,7 @@ test('⭐ a session written once lands in every remaining week, kept movements k
     const before = trainingDays(plannedDays(s, w)).find((d) => d.name.startsWith('Pull'));
     const after = trainingDays(plannedDays(r.structure, w)).find((d) => d.name.startsWith('Pull'));
     assert.ok(after.main.some((e) => e.catalogKey === 'cable-face-pull'), `week ${w + 1} has face pulls`);
-    // The 9×9 he wrote for kept movements is ignored: each keeps its own week's prescription (progression/deload).
+    // Numbers he copied unchanged: every week keeps its own prescription (progression and deload).
     for (const e of before.main) {
       const now = after.main.find((x) => x.catalogKey === e.catalogKey);
       assert.equal(now?.sets, e.sets, `week ${w + 1} ${e.catalogKey} sets`);
@@ -80,4 +81,25 @@ test('⭐ a run day keeps its warm-up, cool-down, stretches, names, notes — on
   assert.equal(after.main[0].coachNote, before.main[0].coachNote, 'the tempo note kept');
   assert.equal(after.main[0].targetSec, 1500, '35 → 25 minutes');
   assert.equal(r.said.length, 0, 'nothing "kept as it was" — it went in');
+});
+
+test('⭐ live-run fix: a prescription change lands in every week ON TOP of its progression; supersets kept', () => {
+  const { active, marks } = benjaminWorld();
+  const s = active.structure;
+  const pull = trainingDays(plannedDays(s, 3)).find((d) => d.name === 'Pull');
+  // "Beef it up": one more set on everything, and the last two movements as a superset.
+  const n = pull.main.length;
+  const rows = pull.main.map((e, i) => ({ key: e.catalogKey, part: 'main', sets: (e.sets ?? 3) + 1, reps: e.reps, repsTo: e.repsMax ?? 0, seconds: 0, miles: 0, group: i >= n - 2 ? 'A' : '' }));
+  const parsed = rewriteFromModelText(JSON.stringify({ say: 'More work.', sessions: [{ name: 'Pull', rows }], weeks: [], rest: [], unmet: [] }));
+  const r = checkRewrite(s, marks, expandRewrite(s, 3, parsed), { athlete, catalog: catalog(), canDo: canDoExercise });
+  assert.ok(r.ok, r.ok ? '' : r.reason);
+  for (let w = 4; w < s.weeks; w += 1) {
+    const b = trainingDays(plannedDays(s, w)).find((d) => d.name.startsWith('Pull'));
+    const a = trainingDays(plannedDays(r.structure, w)).find((d) => d.name.startsWith('Pull'));
+    for (const e of b.main) {
+      const now = a.main.find((x) => x.catalogKey === e.catalogKey);
+      assert.equal(now?.sets, Math.min(6, (e.sets ?? 3) + 1), `week ${w + 1} ${e.catalogKey}: one more set than THAT week had`);
+    }
+    assert.ok(a.main.some((e) => e.groupId), `week ${w + 1}: the superset is there`);
+  }
 });

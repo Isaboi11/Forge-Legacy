@@ -459,7 +459,7 @@ export const ASK_ACTION_CHANGE: AskToolDef = {
 /** The caps prompt's paragraph for `change_v1` — appended after the one-brain prompt, its own cached prefix. */
 export const CHANGE_PROMPT = `# Changing the program they run
 
-When the athlete wants the program they are running changed in any way — a session they don't like, more of a muscle, less running, more rest, more variety, a new focus, slimmed down or beefed up — call propose_program_change with a brief: their ask and your plan. Say your plan in one or two short sentences as you call it (which sessions, what goes in, what comes out, and why). One call covers the whole change, however big; propose_program_edit is only for one quick exact change they spelled out ("swap bench for dumbbell press on Monday"). A brand-new program in place of this one is propose_program. Pain or an injury is still medical_stop and no change.`;
+When the athlete wants the program they are running changed in any way — a session they don't like, more of a muscle, less running, more rest, more variety, a new focus, slimmed down or beefed up, supersets, a swap "everywhere" or "from now on" — call propose_program_change with a brief: their ask and your plan. Describing a change without calling the tool changes nothing: if you say what you will change, you must call it in the same reply. Say your plan in one or two short sentences as you call it (which sessions, what goes in, what comes out, and why). One call covers the whole change, however big; propose_program_edit is only for one quick exact change to ONE named session ("swap bench for dumbbell press on Monday"). A brand-new program in place of this one is propose_program. Pain or an injury is still medical_stop and no change.`;
 
 /**
  * ⚠ WRITTEN, NOT OFFERED (integrator 2026-11-18, pending a PO call): the app has nowhere to keep a session on a date
@@ -494,7 +494,7 @@ export function actionAckV1(name: string): string {
   if (name === 'open_door') return 'The app is showing the athlete a button to that screen. In one short line, say it is there. Do not say you opened it.';
   if (name === 'remember_note') return 'The app is asking the athlete whether to keep this note. Do not say you saved it. Say nothing about it unless they asked you to remember it.';
   if (name === 'propose_program' || name === 'propose_day') {
-    return 'The app is taking it from here: it asks for anything it still needs, then builds it and shows it to confirm. Do not describe the program or the session, and do not ask the questions yourself. In one short line, say what you heard and that you are building it.';
+    return 'The app is taking it from here: it asks for anything it still needs, then builds it and shows it to confirm. Do not describe the program or the session, and do not ask the questions yourself. In one short line, say what you heard. Never say a card is coming or that it is ready — it may ask one thing first.';
   }
   return 'The app is showing the athlete a card with exactly what will change, and nothing changes until they tap Confirm. Do not say it is done. In one short line, tell them to check it and confirm; if you also need to answer something else, do that first.';
 }

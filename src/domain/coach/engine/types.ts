@@ -111,6 +111,8 @@ export interface EngineSink {
 export interface EngineRefs {
   /** Asked once per request whether to replace the running program (`guardActiveProgram`). */
   askedAboutReplacing: boolean;
+  /** Which conversation this sheet is in (S7, PO D10) — set by the sheet from Premium AI. */
+  lane: Lane;
   /** Their own words for the request in flight (Coach-AI-Amendment-003). Empty = a tapped build. */
   typed: string[];
 
@@ -185,6 +187,7 @@ export type Built =
 
 export const freshRefs = (): EngineRefs => ({
   askedAboutReplacing: false,
+  lane: 'tap',
   typed: [],
   mode: null,
   constraints: {},

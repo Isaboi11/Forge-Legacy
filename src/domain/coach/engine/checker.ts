@@ -125,6 +125,21 @@ function buildDay(rd: RewriteDay, before: ProgramDay, cx: CheckContext, dropped:
   const runs = mainRows.filter((r) => r.key === RUN_KEY);
   // A run day stays a run day when he wrote runs for it: only distances/times move.
   if (wasRunDay && runs.length && runs.length === mainRows.length) return runDayFrom(rd, before);
+  // A run day he turned into a ride / row / walk (live run 11-19: "swap an easy run for a bike ride" was refused — a
+  // lone cardio bout failed the LIFTING day's minimum). Its warm-up, cool-down and stretches stay the day's own.
+  const bouts = mainRows.filter((r) => /^cardio-(bike|row|walk|elliptical|stair)$/.test(r.key));
+  if (wasRunDay && bouts.length && bouts.length === mainRows.length) {
+    const minutes = (r: RewriteRow) => Math.max(10, Math.min(180, Math.round((r.seconds ?? 1800) / 60)));
+    return {
+      ...before,
+      name: rd.name || before.name,
+      main: bouts.map((r) => {
+        const activity = r.key.slice('cardio-'.length) as 'bike' | 'row' | 'walk' | 'elliptical' | 'stair';
+        const easy = { bike: 'Easy Bike', row: 'Easy Row', walk: 'Brisk Walk', elliptical: 'Easy Elliptical', stair: 'Easy Stair Climb' }[activity];
+        return { catalogKey: cardioKey(activity), name: easy, kind: 'cardio' as const, activity, modality: activity === 'walk' ? ('outdoor' as const) : ('indoor' as const), sets: 1, targetSec: minutes(r) * 60 };
+      }),
+    };
+  }
   const rest = rd.rows.filter((r) => r.key !== RUN_KEY);
   if (runs.length && !rest.length) {
     return { ...before, name: rd.name || before.name, warmup: [], main: runs.map((r) => runRow(r, rd.name || 'Run')), cooldown: [] };

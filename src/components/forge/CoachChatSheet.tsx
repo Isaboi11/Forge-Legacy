@@ -515,6 +515,10 @@ export function CoachChatSheet({
   const engine = useRef<EngineRefs>(freshRefs());
   /* The engine's world on this phone (`data/engine-port-live.ts`). Made once; tests use `engine/testing.ts`. */
   const [port] = useState(livePort);
+  /* S7: the engine knows which lane it is in (Premium AI talks; everyone else keeps the taps). */
+  useEffect(() => {
+    engine.current.lane = premiumAi ? 'ai' : 'tap';
+  }, [premiumAi]);
   const [busy, setBusy] = useState<'thinking' | 'building' | 'reading' | null>(null);
   const [mode, setModeState] = useState<ChatMode | null>(null);
   const [constraints, setConstraintsState] = useState<ChatState>({});

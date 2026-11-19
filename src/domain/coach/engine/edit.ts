@@ -290,7 +290,8 @@ export async function applyEdit(refs: EngineRefs, port: EnginePort, sink: Engine
         kind: 'chips',
         chips: [
           { label: 'Undo', patch: {}, typedEdit: 'undo', undoOf: undoId },
-          { label: 'Change something else', patch: {} },
+          /* AI lane (S7): no button into the tapped edit flow — they say what else, in words. */
+          ...(refs.lane === 'tap' ? [{ label: 'Change something else', patch: {} }] : []),
           /* QA holt-06: to the program itself, not Home. */
           { label: 'Show me the program', patch: {}, goTo: `/program/${edit.program.id}` },
         ],
@@ -526,7 +527,8 @@ export async function finishTypedEdit(refs: EngineRefs, port: EnginePort, sink: 
         kind: 'chips',
         chips: [
           { label: 'Undo', patch: {}, typedEdit: 'undo', undoOf: undoId },
-          { label: 'Change something else', patch: {} },
+          /* AI lane (S7): no button into the tapped edit flow — they say what else, in words. */
+          ...(refs.lane === 'tap' ? [{ label: 'Change something else', patch: {} }] : []),
           /* QA holt-06: to the program itself, not Home. */
           { label: 'Show me the program', patch: {}, goTo: `/program/${pe.programId}` },
         ],

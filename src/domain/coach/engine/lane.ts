@@ -63,7 +63,25 @@ const orList = (xs: readonly string[]): string =>
  * A build question asked the way a coach asks it — in words, the choices said inline when there are a few — instead of
  * a row of buttons. Long lists (and free numbers like days) are left to the athlete's own words.
  */
+/**
+ * How a coach asks it out loud (live run 11-19: the chip labels read back as "(i'm new to this, i've been at it a while
+ * or i know what I'm doing)" — first person, lower-cased). Questions not here fall back to the choices said inline.
+ */
+const SPOKEN: Partial<Record<string, string>> = {
+  experience: 'How long have you been lifting — just starting out, a year or two, or years?',
+  where: 'Where do you train — a full gym, a home setup, or no equipment at all?',
+  goal: 'What are we chasing — strength, muscle, losing fat, general fitness, or a race?',
+  time: 'How long do you usually have for a session?',
+  days: 'How many days a week can you really train?',
+  race_base: 'Roughly how many miles are you running a week right now? Zero is a fine answer.',
+  race_when: 'When is the race?',
+  race_distance: 'Which distance — 5K, 10K, half or full marathon?',
+  day_focus: 'What do you want to hit today?',
+};
+
 export function askInWords(q: Question): string {
+  const spoken = SPOKEN[q.id];
+  if (spoken) return spoken;
   const labels = q.chips.map((c) => c.label.replace(/\s+—.*$/, '').trim()).filter(Boolean);
   if (q.id === 'days' || labels.length < 2) return q.ask;
   const shown = labels.length <= 4 ? labels : [...labels.slice(0, 3), 'something else'];

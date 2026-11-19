@@ -11,7 +11,7 @@
  *   FL_ENV_FILE=…/.env.local node --experimental-strip-types scripts/holt-corpus/converse-live.mjs [--only id] [--cap 2]
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -50,12 +50,27 @@ const ONLY = arg('--only');
 const TODAY = '2026-11-19';
 
 let spent = 0;
+process.on('unhandledRejection', (e) => console.log(`  (unhandled: ${e?.message ?? e})`));
 async function post(body) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  /* Run 1 (11-19) died on one ECONNRESET 34 conversations in: retry twice, and never throw. */
+  let res = null;
+  let lastErr = '';
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok || (res.status < 500 && res.status !== 429)) break;
+      lastErr = `${res.status}`;
+    } catch (e) {
+      lastErr = String(e?.message ?? e);
+      res = null;
+    }
+    await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+  }
+  if (!res) return { error: `network: ${lastErr}` };
   if (!res.ok) return { error: `${res.status} ${(await res.text()).slice(0, 200)}` };
   const j = await res.json();
   const u = j.usage ?? {};
@@ -96,6 +111,9 @@ async function chat(text, history, world, building) {
       if (FORWARDS.includes(b.name)) {
         actions.push({ name: b.name, input: b.input ?? {} });
         results.push({ type: 'tool_result', tool_use_id: b.id, content: actionAckV1(b.name) });
+      } else if (b.name === 'get_athlete_profile') {
+        const c = world.profile ?? {};
+        results.push({ type: 'tool_result', tool_use_id: b.id, content: `Experience: ${c.experience?.lifting ?? 'not set'} lifting, ${c.experience?.running ?? 'not set'} running. Goal: ${c.goal ?? 'not set'}. Trains at: ${c.environment ?? 'not set'}. Home-gym equipment: ${(c.ownedEquipment ?? []).join(', ') || 'never set up'}. Units: lb.` });
       } else if (b.name === 'get_program_status' && world.active) {
         results.push({ type: 'tool_result', tool_use_id: b.id, content: programText(world.active.structure, world.marks, 0).slice(0, 3800) });
       } else {
@@ -132,10 +150,12 @@ async function converse(c) {
   resetVoice();
   const w = WORLDS[c.world]();
   const { port, world } = fakePort({ active: w.active, marks: w.marks, catalog: catalog() });
+  world.profile = w.constraints;
   port.build.rewrite = rewriter;
   port.build.author = (req) => author(req);
   const sink = recordingSink();
-  const refs = { ...freshRefs(), constraints: { ...w.constraints } };
+  /* The phone remembers where they train (lib/coach-memory) and their level (onboarding) — so does the test. */
+  const refs = { ...freshRefs(), lane: 'ai', constraints: { ...w.constraints }, room: w.constraints.environment ?? null };
   const history = [];
   const edit = {
     premiumAi: true,
@@ -166,11 +186,40 @@ async function converse(c) {
     runKitchen: async () => undefined,
     stops: { crisis: (t) => sink.say({ kind: 'stop', text: t }), urgent: (t) => sink.say({ kind: 'stop', text: t }), care: (t) => sink.say({ kind: 'stop', text: t }), medical: (t) => sink.say({ kind: 'stop', text: t }) },
   };
-  for (const line of c.lines) {
+  /* After the scripted lines, up to three answers to whatever Holt asks — this persona's own (per case `answers`
+     first, then the defaults, answered from the world). Silence when nothing fits. */
+  const DEFAULTS = [
+    [/lifting|training|experience|been at it|level/i, () => (w.constraints.experience?.lifting === 'beginner' ? 'Pretty new to it, a few months.' : w.constraints.experience?.lifting === 'advanced' ? 'Years — I know what I am doing.' : 'A couple of years.')],
+    [/where.*train|gym|equipment|setup/i, () => (w.constraints.environment === 'home' ? 'At home, my own setup.' : w.constraints.environment === 'bodyweight' ? 'No equipment.' : 'A full gym.')],
+    [/miles|running a week|run now/i, () => 'About 10 miles a week right now.'],
+    [/when is the race|race date|when.*race/i, () => 'April 19th next year.'],
+    [/how many days|days a week/i, () => '4 days.'],
+    [/how long.*session|session length|time.*session/i, () => 'About an hour.'],
+    [/chasing|goal|what are we/i, () => (w.constraints.goal ?? 'Building muscle.')],
+    [/which distance/i, () => 'The full marathon.'],
+    [/what do you want to (hit|work)|focus/i, () => 'Full body is fine.'],
+    [/work around|leave out|hurt|injur/i, () => 'Nothing, I am healthy.'],
+  ];
+  const queue = [...c.lines];
+  let answered = 0;
+  while (queue.length || answered < 3) {
+    let line = queue.shift();
+    if (line == null) {
+      const last = sink.holt().at(-1) ?? '';
+      if (!/\?\s*$/.test(last) || refs.built || world.writes.some((x) => x.kind === "update")) break;
+      const hit = [...(c.answers ?? []), ...DEFAULTS].find(([re]) => re.test(last));
+      if (!hit) break;
+      line = typeof hit[1] === 'function' ? hit[1]() : hit[1];
+      answered += 1;
+    }
     if (spent >= CAP) break;
     const from = sink.turns.length;
     c.trace.push(`ATHLETE: ${line}`);
-    turn(refs, port, sink, hooks, line);
+    try {
+      turn(refs, port, sink, hooks, line);
+    } catch (e) {
+      c.trace.push(`  (turn threw: ${e?.message})`);
+    }
     for (let i = 0; i < 600 && (sink.busyLog.at(-1) !== null || sink.turns.length === from); i += 1) await new Promise((r) => setTimeout(r, 100));
     await new Promise((r) => setTimeout(r, 300));
     for (const t of sink.turns.slice(from)) c.trace.push(t.kind === 'chips' ? `  [${t.chips.map((x) => x.label).join(' | ')}]` : `  ${t.kind.toUpperCase()}: ${t.text ?? ''}`);
@@ -204,9 +253,10 @@ for (const c of CONVOS) {
   for (const l of c.trace) console.log(l.length > 400 ? `${l.slice(0, 400)}…` : l);
   for (const f of fails) console.log(`  FAIL: ${f}`);
   out.push({ id: c.id, family: c.family, pass: !fails.length, fails, cost: spent - before, trace: c.trace });
+  appendFileSync(path.join(HERE, `live-converse-${TODAY}.jsonl`), JSON.stringify(out.at(-1)) + '\n');
 }
 console.log(`\n${out.filter((o) => o.pass).length}/${out.length} passed · spent $${spent.toFixed(3)} (cap $${CAP})`);
 const fam = {};
 for (const o of out) (fam[o.family ?? '?'] ??= [0, 0])[o.pass ? 0 : 1] += 1;
 for (const [f, [p2, x]] of Object.entries(fam)) console.log(`  ${f}: ${p2}/${p2 + x}`);
-writeFileSync(path.join(HERE, `live-converse-${TODAY}.jsonl`), out.map((o) => JSON.stringify(o)).join('\n') + '\n');
+

@@ -52,9 +52,24 @@ export function changeFacts(before: ProgramStructure, after: ProgramStructure, f
       const was = b[i]?.main ?? [];
       const added = d.main.filter((e) => !was.some((x) => keyOf(x) === keyOf(e)));
       const gone = was.filter((x) => !d.main.some((e) => keyOf(e) === keyOf(x)));
-      if (!added.length && !gone.length) return;
+      /* Live run 11-19: "beef it up" / "switch to strength" / "superset my accessories" change NUMBERS and PAIRS, not
+         movements — they are facts too. */
+      const dose = (e: ProgramDay['main'][number]) => (e.kind === 'cardio' ? '' : `${e.sets ?? '?'}×${e.reps ?? '?'}${e.repsMax ? `–${e.repsMax}` : ''}`);
+      const redosed = d.main
+        .map((e) => ({ e, x: was.find((y) => keyOf(y) === keyOf(e)) }))
+        .filter(({ e, x }) => x && x.kind !== 'cardio' && dose(x) !== dose(e))
+        .map(({ e, x }) => `${e.name} ${dose(x!)} → ${dose(e)}`);
+      const paired = d.main.filter((e) => e.groupId && !was.find((y) => keyOf(y) === keyOf(e))?.groupId).map(label);
+      if (!added.length && !gone.length && !redosed.length && !paired.length) return;
       seen.add(name);
-      const what = [added.length ? `adds ${andList(added.map(label))}` : '', gone.length ? `drops ${andList(gone.map(label))}` : ''].filter(Boolean).join('; ');
+      const what = [
+        added.length ? `adds ${andList(added.map(label))}` : '',
+        gone.length ? `drops ${andList(gone.map(label))}` : '',
+        redosed.length ? `${redosed.slice(0, 3).join(', ')}${redosed.length > 3 ? ` and ${redosed.length - 3} more` : ''}` : '',
+        paired.length ? `supersets ${andList(paired)}` : '',
+      ]
+        .filter(Boolean)
+        .join('; ');
       out.push(`- **${name}** — ${what}${w > fromWeek ? ` (from week ${w + 1})` : ''}`);
     });
     const mb = runMiles(b);
@@ -125,7 +140,11 @@ export async function proposeChange(refs: EngineRefs, port: EnginePort, sink: En
     return void sink.say({ kind: 'holt', text: `${parsed.say ? `${parsed.say} ` : ''}But I can't put that in: ${checked.reason}` });
   }
   const facts = changeFacts(active.structure, checked.structure, first.at.weekIndex, checked.rest);
-  if (!facts.length) {
+  /* "No change" is decided on the structure itself, never on whether the summary found words for it. */
+  const same = !checked.rest.length && Array.from({ length: Math.max(1, active.structure.weeks) }, (_, w) => w).every(
+    (w) => JSON.stringify(plannedDays(checked.structure, w)) === JSON.stringify(plannedDays(active.structure, w)),
+  );
+  if (same || !facts.length) {
     return void sink.say({ kind: 'holt', text: parsed.unmet.length ? `I couldn't make that change: ${andList(parsed.unmet)}.` : "That would leave your program exactly as it is — tell me a bit more about what you'd like different?" });
   }
   refs.pendingRewrite = { programId: active.id, before: active.structure, after: checked.structure, rest: checked.rest, what: brief };
