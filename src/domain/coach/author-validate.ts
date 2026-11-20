@@ -359,6 +359,9 @@ export function volumeLine(v: ValidatedPlan): string | null {
 const INTERNAL =
   /\b(catalog(ue)?|schema|json|mismatch|excluded|equipment list|the app requested|cardio-[a-z]+|vertical push|horizontal push|hip dominant|knee dominant|elbow (flexion|extension))\b|\bkeys?\b[^.]*\b(library|exact|match\w*|list)\b|\bsections?\b[^.]*\b(off|excluded|banned|limits?)\b/i;
 
+/** A line of Holt's that may be shown: nothing medical, no discomfort, nothing about the app's insides. */
+export const holtLineOk = (line: string): boolean => plain(line) && !INTERNAL.test(line);
+
 /**
  * The line above the card.
  *

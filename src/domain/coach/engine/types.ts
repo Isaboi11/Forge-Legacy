@@ -75,7 +75,7 @@ export interface EnginePort {
      * Holt rewrites the weeks ahead (PO D12) — `coach-rewrite` on the phone; the rewriter's JSON text, or why not. Only
      * an app sending caps `change_v1` is offered the tool that leads here.
      */
-    rewrite(req: RewriteRequest): Promise<{ kind: 'ok'; text: string } | { kind: 'unavailable' | 'offline' | 'out_of_credits' }>;
+    rewrite(req: RewriteRequest): Promise<{ kind: 'ok'; text: string } | { kind: 'unavailable' | 'offline' | 'out_of_credits' | 'stop' }>;
     /** `consume_holt_allowance` — the only spend of the free allowance; null = unreadable. */
     spend(kind: 'program' | 'day'): Promise<{ allowed: boolean; used: number; allowance: number } | null>;
   };

@@ -12,9 +12,10 @@
 
 import type { ProgramDay, ProgramStructure } from '@/data/programs-live';
 import { plannedDays, trainingDays, type SessionMark } from '../../program/progress-core.ts';
-import { droppedLine } from '../author-validate.ts';
+import { scanReply } from '../../ai/output-scan.ts';
+import { droppedLine, holtLineOk } from '../author-validate.ts';
 import type { EquipmentGate } from '../candidates.ts';
-import { isRoom } from '../chat-core.ts';
+import { isRoom, MEDICAL_STOP, STOP_KICKER } from '../chat-core.ts';
 import type { Environment, Experience, Limitation } from '../constraints.ts';
 import { editableSessions } from '../edit-chat.ts';
 import { markHoltChange } from '../holt-marks.ts';
@@ -26,7 +27,20 @@ import type { EnginePort, EngineRefs, EngineSink } from './types.ts';
 
 export interface ChangeHooks {
   canDo: EquipmentGate;
+  /** The chat's own out-of-credits line (C-D1: balance + when they come back). Optional for tests. */
+  creditsLine?: (r: { remaining: number; allowance: number }, web: boolean) => Promise<string>;
+  /** The chat's medical stop (the stop card). Optional for tests. */
+  medicalStop?: (text: string) => void;
 }
+
+/**
+ * Re-audit 11-20: Holt's own words on a rewrite (`say`, `unmet`) were shown as written — the one path in the chat whose
+ * text the output scanner never read. A line goes out only if the medical guard, the discomfort filter, the app-insides
+ * filter (`holtLineOk`, the author path's) AND the output scanner all pass it.
+ */
+const lineOk = (line: string): boolean => !!line && holtLineOk(line) && !scanReply(line).hit;
+/** A line that is not just unfit to show but CROSSES the line (a dose, reassurance, a diagnosis) — the turn stops. */
+const crosses = (line: string): boolean => !!line && scanReply(line).hit;
 
 const andList = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 const base = (name: string) => name.replace(/\s*\[[^\]]*\]\s*/g, '').trim();
@@ -86,9 +100,15 @@ export function changeFacts(before: ProgramStructure, after: ProgramStructure, f
   return out;
 }
 
-/** A race plan: its final week holds a run of half-marathon length or more (the race). */
-const isRacePlan = (s: ProgramStructure) =>
-  trainingDays(plannedDays(s, Math.max(1, s.weeks) - 1)).some((d) => d.main.some((e) => e.activity === 'run' && (e.targetMi ?? 0) >= 13));
+/**
+ * A race plan: its final week holds the race. Re-audit 11-20: only a run of 13 mi or more counted, so a 5K or 10K
+ * plan's race week could be rewritten (a probe: 8.3 → 27 mi, accepted). Now a session or run the engine named for the
+ * race ("Race Day", `endurance.ts`) counts too, at any distance.
+ */
+export const isRacePlan = (s: ProgramStructure) =>
+  trainingDays(plannedDays(s, Math.max(1, s.weeks) - 1)).some(
+    (d) => /\brace\b/i.test(d.name) || d.main.some((e) => e.activity === 'run' && ((e.targetMi ?? 0) >= 13 || /\brace\b/i.test(e.name ?? ''))),
+  );
 
 export async function proposeChange(
   refs: EngineRefs,
@@ -132,11 +152,27 @@ export async function proposeChange(
   sink.busy('building');
   const r = await port.build.rewrite({ ...req, athlete: { ...req.athlete, equipment: [...req.athlete.equipment], limitations: [...req.athlete.limitations] } });
   sink.busy(null);
+  /* Re-audit 11-20: out of credits, a medical stop and an outage each get their own words (C-D1 regressed here). */
+  if (r.kind === 'stop') {
+    if (hooks.medicalStop) return void hooks.medicalStop(said || brief);
+    return void sink.say({ kind: 'stop', text: MEDICAL_STOP, kicker: STOP_KICKER });
+  }
+  if (r.kind === 'out_of_credits') {
+    const line = hooks.creditsLine ? await hooks.creditsLine({ remaining: 0, allowance: 1 }, false).catch(() => null) : null;
+    return void sink.say({ kind: 'holt', text: `${line ?? "You're out of Premium AI credits for now."} Your program is unchanged.` });
+  }
   if (r.kind !== 'ok') {
     return void sink.say({ kind: 'holt', text: "I couldn't rework it just now. Your program is unchanged — ask me again in a moment." });
   }
-  const parsed = rewriteFromModelText(r.text);
-  if (!parsed) return void sink.say({ kind: 'holt', text: "That rework didn't come out right, so I've left your program as it is. Ask me again?" });
+  const raw = rewriteFromModelText(r.text);
+  if (!raw) return void sink.say({ kind: 'holt', text: "That rework didn't come out right, so I've left your program as it is. Ask me again?" });
+  /* ⛔ His words cross the line (a dose, "that's normal", a diagnosis): the change is not offered — the stop card
+     instead, as coach-ask's retract does. Anything merely unfit to show (app insides, discomfort) is left out. */
+  if ([raw.say, ...raw.unmet].some(crosses)) {
+    if (hooks.medicalStop) return void hooks.medicalStop(said || brief);
+    return void sink.say({ kind: 'stop', text: MEDICAL_STOP, kicker: STOP_KICKER });
+  }
+  const parsed = { ...raw, say: lineOk(raw.say) ? raw.say : '', unmet: raw.unmet.filter(lineOk) };
   /* Nothing written at all: he says what he couldn't do (or that it would change nothing) — no card. */
   if (!parsed.sessions.length && !parsed.weeks.length && !parsed.rest.length) {
     return void sink.say({
@@ -149,6 +185,7 @@ export async function proposeChange(
     catalog: port.catalog,
     canDo: hooks.canDo,
     race: isRacePlan(active.structure),
+    goal: c.goal ?? refs.profileGoal ?? null,
   });
   if (!checked.ok) {
     return void sink.say({ kind: 'holt', text: `${parsed.say ? `${parsed.say} ` : ''}But I can't put that in: ${checked.reason}` });
@@ -193,10 +230,16 @@ export async function applyRewrite(refs: EngineRefs, port: EnginePort, sink: Eng
   const stamp = port.now();
   const undoId = stamp.getTime();
   sink.busy('thinking');
+  let structureSaved = false;
+  const rested: { weekIndex: number; dayIndex: number }[] = [];
   try {
     const saved = markHoltChange(pr.before, pr.after, { id: String(undoId), at: stamp.toISOString(), what: pr.what, asked: refs.typed[refs.typed.length - 1] ?? null });
     await port.programs.update(pr.programId, saved);
-    for (const r of pr.rest) await port.programs.skip(pr.programId, r.weekIndex, r.dayIndex);
+    structureSaved = true;
+    for (const r of pr.rest) {
+      await port.programs.skip(pr.programId, r.weekIndex, r.dayIndex);
+      rested.push(r);
+    }
     /* The gear the change uses is theirs now — a failed save never undoes the change it came with. */
     if (pr.kit?.length) {
       await port.memory.addEquipment(pr.kit).catch(() => undefined);
@@ -216,6 +259,17 @@ export async function applyRewrite(refs: EngineRefs, port: EnginePort, sink: Eng
     );
     return true;
   } catch (e) {
+    /* Re-audit 11-20: the structure saved and a rest mark then failed — "unchanged" was false and there was no Undo.
+       Now what saved is said, and Undo puts back exactly that (the structure and the rest marks that did go in). */
+    if (structureSaved) {
+      refs.lastEdit = { programId: pr.programId, before: pr.before, rested, id: undoId };
+      refs.pendingRewrite = null;
+      sink.say(
+        { kind: 'holt', text: "The change is in, but I couldn't mark every rest day — those sessions are still on your plan. Skip them when they come up, or undo the whole change." },
+        { kind: 'chips', chips: [{ label: 'Undo', patch: {}, typedEdit: 'undo' as const, undoOf: undoId }] },
+      );
+      return true;
+    }
     sink.say({ kind: 'error', text: 'That did not save.', sub: e instanceof Error ? e.message : String(e), action: 'Your program is unchanged. Try again in a moment.' });
     return true;
   } finally {

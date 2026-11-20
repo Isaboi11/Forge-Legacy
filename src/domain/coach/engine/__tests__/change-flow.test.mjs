@@ -106,3 +106,43 @@ test('a change that touches nothing is said, not offered', async () => {
   assert.match(s.sink.holt().at(-1), /couldn't make that change: a leg press/);
   assert.equal(s.sink.lastChips().length, 0);
 });
+
+/* ── AI re-audit 11-20: Holt's words on a rewrite go through the output scan; each failure gets its own words ── */
+
+test('⛔ re-audit 11-20: his words reassure about a symptom → the stop card, and NO change is offered', async () => {
+  const s = setup();
+  const stops = [];
+  s.hooks.turn = { ...s.hooks.turn, stops: { medical: (t) => stops.push(t) } };
+  s.world.rewriteReplies.push(JSON.stringify({ say: "Clicking without pain is usually harmless, so I've added more pressing.", sessions: [{ name: 'Push', rows: [ROW('dumbbell-bench-press', 4, 10)] }], weeks: [], rest: [], unmet: [] }));
+  await actOn(s.refs, s.port, s.sink, s.hooks, [{ name: 'propose_program_change', input: { brief: 'more pressing' } }], 'my shoulder clicks, more pressing', { done: true, stop: null }, true, null, 'program');
+  assert.equal(stops.length, 1, 'the medical stop ran');
+  assert.ok(!s.sink.holt().some((t) => /usually harmless/.test(t)), 'his reassurance is never shown');
+  assert.equal(s.refs.pendingRewrite ?? null, null, 'nothing waits for Do it');
+  assert.equal(s.world.writes.length, 0);
+});
+
+test('re-audit 11-20: a "say" about the app\'s insides is left out, the change still offered', async () => {
+  const s = setup();
+  s.world.rewriteReplies.push(JSON.stringify({ say: 'I matched the catalog keys exactly.', sessions: [{ name: 'Pull', rows: [ROW('cable-face-pull')] }], weeks: [], rest: [], unmet: [] }));
+  await actOn(s.refs, s.port, s.sink, s.hooks, [{ name: 'propose_program_change', input: { brief: 'face pulls' } }], 'add face pulls to pull day', { done: true, stop: null }, true, null, 'program');
+  assert.ok(!s.sink.holt().some((t) => /catalog keys/.test(t)));
+});
+
+test('re-audit 11-20: out of credits says so (with the chat\'s own balance line), never "ask me again in a moment"', async () => {
+  const s = setup();
+  s.hooks.turn = { ...s.hooks.turn, creditsLine: async () => "This month's are used — they come back on Dec 1." };
+  s.port.build.rewrite = async () => ({ kind: 'out_of_credits' });
+  await actOn(s.refs, s.port, s.sink, s.hooks, [{ name: 'propose_program_change', input: { brief: 'more variety' } }], 'more variety please', { done: true, stop: null }, true, null, 'program');
+  const last = s.sink.holt().at(-1);
+  assert.match(last, /come back on Dec 1/);
+  assert.match(last, /unchanged/);
+  assert.doesNotMatch(last, /ask me again in a moment/);
+});
+
+test('⛔ re-audit 11-20: a line the medical guard stops is the stop card, never "couldn\'t rework it"', async () => {
+  const s = setup();
+  s.port.build.rewrite = async () => ({ kind: 'stop' });
+  await actOn(s.refs, s.port, s.sink, s.hooks, [{ name: 'propose_program_change', input: { brief: 'more pressing' } }], 'more pressing', { done: true, stop: null }, true, null, 'program');
+  assert.ok(s.sink.turns.some((t) => t.kind === 'stop'), 'the stop card (no stop hook in this harness → the engine draws it)');
+  assert.ok(!s.sink.holt().some((t) => /couldn't rework it/.test(t)));
+});

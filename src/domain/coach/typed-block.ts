@@ -119,7 +119,7 @@ export function typedOverCeiling(
   });
 }
 
-const GROUP_WORDS: Record<VolumeGroup, string> = {
+export const GROUP_WORDS: Record<VolumeGroup, string> = {
   chest: 'chest',
   lats: 'lats',
   upper_back: 'upper back',

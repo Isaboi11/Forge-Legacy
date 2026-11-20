@@ -80,7 +80,7 @@ export async function actOn(
         shown = flow = true;
         break;
       case 'change':
-        await proposeChange(refs, port, sink, { canDo: hooks.canDo }, step.brief, asked, step.newEquipment);
+        await proposeChange(refs, port, sink, { canDo: hooks.canDo, creditsLine: hooks.turn?.creditsLine, medicalStop: hooks.turn?.stops?.medical }, step.brief, asked, step.newEquipment);
         shown = flow = true;
         break;
       /* "Scratch that change" (round 3, 11-19): the model decided it is an undo — the app's own Undo, free. A card
