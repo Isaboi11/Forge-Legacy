@@ -117,6 +117,8 @@ import {
   SUMMARY_SYSTEM,
   transcriptOf,
 } from '../../../src/domain/coach/ask-tools.ts';
+// AI re-audit 11-20 (P1): the chat holds to the athlete's allergies — read here, filtered here, named in their turn.
+import { allergyNote, allergyReadFrom, withoutAllergens, type AllergyRead } from '../../../src/domain/coach/ask-allergies.ts';
 // ⚠ WHAT EACH MODEL IS SENT, AND WHICH MODEL RUNS (Sprint 3b, PL-7) — one request shape per model, and the model +
 // effort read from coach_ai_model_config (0274) with the in-code default on any failure.
 import { answeredBy, anthropicHeaders, EFFORTS, KNOWN_MODELS, requestFields, takesWebSearch } from '../../../src/domain/ai/model-request.ts';
@@ -623,6 +625,22 @@ async function memorySwitch(supabase: ReturnType<typeof createClient>, authoriza
 }
 
 /**
+ * The athlete's Meal Plan Setup allergies (`meal_plan_prefs`, 0210), read AS THE ATHLETE (their JWT, RLS). No row = no
+ * allergies said (the same as the Kitchen). Any error or throw = a FAILED read, which `withoutAllergens` /
+ * `allergyNote` treat as "keep every recipe out and ask first" (AI re-audit 11-20).
+ */
+async function allergyReadOf(supabase: ReturnType<typeof createClient>, authorization: string): Promise<AllergyRead> {
+  try {
+    const uid = uidFromAuthorization(authorization);
+    if (!uid) return { ok: false };
+    const { data, error } = await supabase.from('meal_plan_prefs').select('allergens').eq('athlete_id', uid).maybeSingle();
+    return allergyReadFrom(data, error);
+  } catch {
+    return { ok: false };
+  }
+}
+
+/**
  * The summary's stop test — stricter than a question's guard: a stored memory keeps nothing about the body at all, not
  * even the "it hurts, swap it" a live question is allowed (medical-routing.ts), so `mentionsDiscomfort` too. A minor's
  * memory goes through the minor's guard as well. Sprint 4b: and the memory filter's word lists (`factIsPersonalHealth`) —
@@ -1071,11 +1089,17 @@ Deno.serve(async (req) => {
   if (allowWeb) {
     messages[messages.length - 1].content += '\n\n(The athlete tapped "Find one online" — you have web search for this message.)';
   }
+  // AI re-audit 11-20 (P1): their Meal Plan Setup allergies, read as the athlete. ⛔ A failed read fails CLOSED — no
+  // recipe reaches him and he asks first (ask-allergies.ts). The note is added only when there is something to say.
+  const allergies = await allergyReadOf(supabase, authorization);
+  const allergyLine = allergyNote(allergies);
+  if (allergyLine) messages[messages.length - 1].content += `\n\n${allergyLine}`;
 
   // The athlete's clock, so a tool's "2026-09-22" is THEIR Monday (`getTimezoneOffset()`, minutes).
   const tz = typeof body.tz === 'number' && Number.isInteger(body.tz) && Math.abs(body.tz) <= 840 ? body.tz : 0;
-  // The recipe book the device computed — the app's numbers, never the model's (NUT-D4).
-  const recipes = narrowRecipes(body.recipes);
+  // The recipe book the device computed — the app's numbers, never the model's (NUT-D4) — less anything that meets
+  // the athlete's allergies (the app's own tags), so he can't suggest what he can't see.
+  const recipes = withoutAllergens(narrowRecipes(body.recipes), allergies);
   // Resolved on the first tool call only — a question that needs no data pays nothing for it.
   const jwt = authorization.replace(/^Bearer\s+/i, '');
   let uidOnce: Promise<string | null> | null = null;

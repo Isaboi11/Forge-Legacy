@@ -38,6 +38,7 @@ export const FUNCTIONS = {
     tests: [
       'src/domain/coach/__tests__/coach-ask-caps.test.mjs',
       'src/domain/coach/__tests__/coach-ask-source.test.mjs',
+      'src/domain/coach/__tests__/ask-allergies.test.mjs',
       'src/domain/ai/__tests__/migration-0276.test.mjs',
       'src/domain/coach/__tests__/coach-ask-memory.test.mjs',
       'src/domain/coach/__tests__/holt-memory.test.mjs',

@@ -2299,6 +2299,56 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
         return { text: `The read failed: ${String((e as Error)?.message ?? e).slice(0, 160)}. Tell the athlete you couldn't pull it just now.`, isError: true };
     }
 }
+const LABEL: Record<string, string> = {
+    peanuts: 'peanuts (and peanut butter, peanut oil, satay sauce)',
+    tree_nuts: 'tree nuts (almonds, cashews, walnuts, pecans, pistachios, hazelnuts, macadamias, pesto, nut butters, nut milks)',
+    dairy: 'dairy (milk, butter, cheese, yogurt, cream, whey and casein protein)',
+    eggs: 'eggs (and mayonnaise, aioli, most baked goods)',
+    gluten: 'gluten (wheat, barley, rye, regular pasta, bread, flour tortillas, couscous, soy sauce unless gluten-free)',
+    soy: 'soy (tofu, tempeh, edamame, soy sauce, miso, soy protein)',
+    fish: 'fish (and fish sauce, anchovies, Worcestershire sauce, Caesar dressing)',
+    shellfish: 'shellfish (shrimp, prawns, crab, lobster, scallops, mussels, oyster sauce)',
+    sesame: 'sesame (sesame seeds and oil, tahini, hummus)',
+};
+export type AllergyRead = {
+    ok: true;
+    allergens: string[];
+} | {
+    ok: false;
+};
+export function allergyReadFrom(row: unknown, error: unknown): AllergyRead {
+    if (error)
+        return { ok: false };
+    if (row == null)
+        return { ok: true, allergens: [] };
+    const a = (row as {
+        allergens?: unknown;
+    }).allergens;
+    if (a == null)
+        return { ok: true, allergens: [] };
+    if (!Array.isArray(a) || a.some((x) => typeof x !== 'string'))
+        return { ok: false };
+    return { ok: true, allergens: [...new Set((a as string[]).map((x) => x.trim().toLowerCase()).filter(Boolean))] };
+}
+export function withoutAllergens<T extends {
+    allergens: readonly string[];
+}>(cards: readonly T[], read: AllergyRead): T[] {
+    if (!read.ok)
+        return [];
+    if (!read.allergens.length)
+        return [...cards];
+    const theirs = new Set(read.allergens);
+    return cards.filter((c) => !c.allergens.some((a) => theirs.has(a.trim().toLowerCase())));
+}
+export function allergyNote(read: AllergyRead): string | null {
+    if (!read.ok) {
+        return "(The app couldn't load this athlete's food allergies just now. Before you suggest any food, dish or recipe, ask whether they have any food allergies.)";
+    }
+    if (!read.allergens.length)
+        return null;
+    const named = read.allergens.map((a) => LABEL[a] ?? a.replace(/_/g, ' '));
+    return `(Food allergies on their Meal Plan Setup: ${named.join('; ')}. Never suggest a food, dish, recipe or online recipe that contains any of these or usually does \u2014 including sauces, toppings and garnishes. If you aren't sure a dish is free of them, say so and suggest something else. The recipe search already leaves those recipes out.)`;
+}
 export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 export const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
@@ -3724,6 +3774,18 @@ async function memorySwitch(supabase: ReturnType<typeof createClient>, authoriza
         return 'unknown';
     }
 }
+async function allergyReadOf(supabase: ReturnType<typeof createClient>, authorization: string): Promise<AllergyRead> {
+    try {
+        const uid = uidFromAuthorization(authorization);
+        if (!uid)
+            return { ok: false };
+        const { data, error } = await supabase.from('meal_plan_prefs').select('allergens').eq('athlete_id', uid).maybeSingle();
+        return allergyReadFrom(data, error);
+    }
+    catch {
+        return { ok: false };
+    }
+}
 const memoryStops = (minor: boolean) => (s: string): boolean => guardRoute(s, minor) !== null || mentionsDiscomfort(s) || scanReply(s).hit || factIsPersonalHealth(s);
 async function memoryModelCall(settle: ReturnType<typeof settler>, authorization: string, { system, user, maxTokens, format }: {
     system: string;
@@ -4095,8 +4157,12 @@ Deno.serve(async (req) => {
     if (allowWeb) {
         messages[messages.length - 1].content += '\n\n(The athlete tapped "Find one online" \u2014 you have web search for this message.)';
     }
+    const allergies = await allergyReadOf(supabase, authorization);
+    const allergyLine = allergyNote(allergies);
+    if (allergyLine)
+        messages[messages.length - 1].content += `\n\n${allergyLine}`;
     const tz = typeof body.tz === 'number' && Number.isInteger(body.tz) && Math.abs(body.tz) <= 840 ? body.tz : 0;
-    const recipes = narrowRecipes(body.recipes);
+    const recipes = withoutAllergens(narrowRecipes(body.recipes), allergies);
     const jwt = authorization.replace(/^Bearer\s+/i, '');
     let uidOnce: Promise<string | null> | null = null;
     const uidOf = () => (uidOnce ??= supabase.auth.getUser(jwt).then((r: {
