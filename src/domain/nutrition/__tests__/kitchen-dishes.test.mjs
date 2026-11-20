@@ -172,7 +172,7 @@ test('the food names in the prompt are the catalogue\'s, current', async () => {
 });
 
 test('diets are enforced by the app: a vegan never sees cheese, a vegetarian never sees chicken', () => {
-  const veg = dish({ name: 'Tofu Rice Bowl', ingredients: [{ text: '200 g tofu', quantity: 200, unit: 'g', food: 'firm tofu' }, { text: '2 tbsp peanut butter', quantity: 30, unit: 'g', food: 'peanut butter' }] });
+  const veg = dish({ name: 'Tofu Rice Bowl', ingredients: [{ text: '200 g tofu', quantity: 200, unit: 'g', food: 'firm tofu' }, { text: '2 tbsp peanut butter', quantity: 30, unit: 'g', food: 'peanut butter' }], steps: ['Sear the tofu.', 'Toss with the peanut butter and serve.'] });
   const cheesy = dish({ name: 'Bean and Cheese Bake', method: 'oven', ingredients: [{ text: '100 g black beans', quantity: 100, unit: 'g', food: 'black beans' }, { text: '50 g cheddar', quantity: 50, unit: 'g', food: 'cheddar' }] });
   assert.deepEqual(dishCards([veg, cheesy], [], 'vegan').map((c) => c.name), ['Tofu Rice Bowl'], 'peanut butter is vegan; cheddar is not');
   assert.deepEqual(dishCards([dish(), veg], [], 'vegetarian').map((c) => c.name), ['Tofu Rice Bowl']);
@@ -183,4 +183,41 @@ test('three are shown even when two share a method; names are cut at a word', ()
   assert.equal(out.length, 3);
   const [long] = sanitizeKitchenAnswer({ options: [dish({ name: 'Overnight Oats with Banana and Blueberries and Honey Drizzle' })] });
   assert.ok(!/Blueberri$|\s$/.test(long.name) && long.name.length <= 48, long.name);
+});
+
+/* ── AI re-audit 11-20: the steps are read, and a no-amount line the app can't vouch for is unknown ── */
+
+test('re-audit 11-20: an allergen in the STEPS (a garnish, a topping, a side) drops the dish', () => {
+  const garnish = dish({ name: 'Chicken Rice Bowl', steps: ['Sear the chicken.', 'Serve over rice and spinach, garnished with sesame seeds.'] });
+  const topped = dish({ name: 'Chicken Rice Bowl', steps: ['Sear the chicken.', 'Top with crushed peanuts.'] });
+  const naan = dish({ name: 'Chicken Rice Bowl', steps: ['Sear the chicken.', 'Serve with warm naan.'] });
+  assert.deepEqual(dishCards([garnish], ['sesame']), []);
+  assert.deepEqual(dishCards([topped], ['peanuts']), []);
+  assert.deepEqual(dishCards([naan], ['gluten']), []);
+  // Nobody avoiding them: all three are still shown.
+  assert.equal(dishCards([garnish, topped, naan], []).length, 3);
+});
+
+test('re-audit 11-20: a step that DISCLAIMS an allergen ("no peanuts", "dairy-free") is not that allergen', () => {
+  const d = dish({ steps: ['Sear the chicken.', 'Serve over rice and spinach — no peanuts, keep it dairy-free.'] });
+  assert.deepEqual(dishCards([d], ['peanuts', 'dairy']).map((c) => c.name), ['Greek Chicken Rice Bowl']);
+});
+
+test('re-audit 11-20: an unmatched line with NO amount is unknown — dropped for anyone who avoids something', () => {
+  // ("hot sauce" is the catalogue's own `hot_sauce` — certain, its tags read — so it is not on this list.)
+  for (const food of ['mole', 'Kewpie mayo', 'gochujang', 'red curry paste', 'protein powder', 'dark chocolate']) {
+    const d = dish({ ingredients: [...dish().ingredients, { text: `${food} to serve`, quantity: null, unit: '', food }] });
+    assert.deepEqual(dishCards([d], ['peanuts']), [], food);
+    assert.equal(dishCards([d], []).length, 1, `${food}: nobody avoiding anything still sees it`);
+  }
+});
+
+test('re-audit 11-20: plain seasonings with no amount stay known (salt, pepper, herbs, lemon, water)', () => {
+  for (const food of ['salt', 'black pepper', 'salt and pepper', 'fresh parsley', 'cilantro', 'lemon wedges', 'lime juice', 'red pepper flakes', 'water', 'rice vinegar']) {
+    const d = dish({ ingredients: [...dish().ingredients, { text: `${food} to taste`, quantity: null, unit: '', food }] });
+    assert.deepEqual(dishCards([d], ['peanuts']).map((c) => c.name), ['Greek Chicken Rice Bowl'], food);
+  }
+  // Malt vinegar is barley — never a "plain seasoning" for someone avoiding gluten.
+  const malt = dish({ ingredients: [...dish().ingredients, { text: 'malt vinegar', quantity: null, unit: '', food: 'malt vinegar' }] });
+  assert.deepEqual(dishCards([malt], ['gluten']), []);
 });

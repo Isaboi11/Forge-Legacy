@@ -75,6 +75,35 @@ export function breaksDiet(d: KitchenDish, keys: readonly string[], diet: string
 /** Does this athlete avoid anything at all? Then a line nobody can identify is a line they can't eat. */
 const avoidsAnything = (banned: ReadonlySet<string>, diet: string | null | undefined): boolean => banned.size > 0 || !!BLOCKED_DIETS[diet ?? ''];
 
+/**
+ * What a line with NO amount may be and still be "known" (AI re-audit 11-20). Seasonings, herbs, citrus and water —
+ * none of them one of the nine allergens. Anything else unmatched with no amount ("hot sauce", "a spoon of mole",
+ * "Kewpie to serve", "gochujang") is an unknown line like any other: the re-audit's probe showed 12 of 21 hidden-
+ * allergen dishes shown because the old rule only counted unknown lines that carried an amount. ⚠ Malt vinegar is
+ * barley (gluten), so only plain vinegars are here; soy and fish sauces are never here.
+ */
+const SEASONING =
+  /^\s*(?:(?:sea|kosher|flaky|table)\s+)?salt(?:\s+and\s+(?:black\s+)?pepper)?\s*$|^\s*(?:freshly\s+ground\s+|ground\s+|cracked\s+)?(?:black\s+|white\s+)?pepper(?:corns)?\s*$|^\s*(?:fresh\s+|dried\s+|chopped\s+)?(?:parsley|cilantro|coriander(?:\s+leaves)?|basil(?:\s+leaves)?|mint(?:\s+leaves)?|dill|chives|thyme|rosemary|oregano|sage|bay\s+leaf|bay\s+leaves|tarragon)\s*$|^\s*(?:ground\s+)?(?:cumin|paprika|smoked\s+paprika|chili\s+powder|chilli\s+powder|cayenne(?:\s+pepper)?|turmeric|cinnamon|nutmeg|garlic\s+powder|onion\s+powder|ginger|allspice|cloves|cardamom|coriander\s+seeds?|fennel\s+seeds?|mustard\s+seeds?|italian\s+seasoning|herbes\s+de\s+provence|red\s+pepper\s+flakes|chil(?:l)?i\s+flakes|crushed\s+red\s+pepper)\s*$|^\s*(?:lemon|lime)(?:\s+(?:juice|zest|wedges?|slices?))?\s*$|^\s*(?:(?:white|red\s+wine|white\s+wine|apple\s+cider|cider|rice|balsamic)\s+)?vinegar\s*$|^\s*(?:cold\s+|warm\s+|hot\s+)?water\s*$|^\s*ice(?:\s+cubes)?\s*$/i;
+
+/** An unmatched line the app can't vouch for: one with an amount, or one with none that isn't a plain seasoning. */
+function unknownLine(u: { food: string; text: string; quantity: number | null; reason: string; candidates: readonly string[] }): boolean {
+  if (u.quantity != null) return true;
+  if (u.reason === 'amount' && u.candidates.length === 1) return false; // the food is certain; its tags are read below
+  return !SEASONING.test(foldAccents(u.food || u.text || ''));
+}
+
+/** "Dairy-free yogurt", "no peanuts", "without sesame" — the disclaimer is not the food (the name's rule, for steps). */
+const withoutDisclaimers = (s: string): string => s.replace(/\b\w+[-\s]free\b/gi, ' ').replace(/\b(?:no|without|free\s+of|skip\s+the)\s+\w+/gi, ' ');
+
+/**
+ * The dish with its STEPS read as lines too (AI re-audit 11-20): "Garnish with sesame seeds", "Top with crushed
+ * peanuts", "Serve with naan" put an allergen on the plate without being an ingredient line.
+ */
+const withSteps = (d: KitchenDish): KitchenDish => ({
+  ...d,
+  ingredients: [...d.ingredients, ...(d.steps ?? []).map((s) => ({ text: withoutDisclaimers(s), food: '', quantity: null, unit: '' }))],
+});
+
 /** Dishes → cards, with anything the athlete avoids removed (allergens and diet). Order is kept. */
 export function dishCards(dishes: readonly KitchenDish[], avoid: readonly string[], diet: string | null = null): DishCard[] {
   const banned = new Set(avoid);
@@ -83,15 +112,16 @@ export function dishCards(dishes: readonly KitchenDish[], avoid: readonly string
   for (const d of dishes) {
     const read = dishAsRead(d);
     const draft = draftFromRead(read);
-    /* ⛔ NUT-D6 (AI audit 11-16, N-D1): unknown counts as excluded — see the header. */
-    if (strict && draft.unmatched.some((u) => u.quantity != null)) continue;
+    /* ⛔ NUT-D6 (AI audit 11-16, N-D1; re-audit 11-20): unknown counts as excluded — see the header and `unknownLine`. */
+    if (strict && draft.unmatched.some(unknownLine)) continue;
     /* A line whose FOOD matched but whose amount didn't ("a splash of teriyaki sauce") is still that food: its
        catalogue tags and diet count, even though it adds nothing to the numbers. */
     const amountOnly = draft.unmatched.flatMap((u) => (u.reason === 'amount' && u.candidates.length === 1 ? [{ key: u.candidates[0] }] : []));
     const keys = [...draft.form.ingredients, ...amountOnly].flatMap((i) => (i.key ? [i.key] : []));
-    const tagged = [...detectAllergens([...draft.form.ingredients, ...amountOnly]), ...allergensByWord(d)];
+    const full = withSteps(d);
+    const tagged = [...detectAllergens([...draft.form.ingredients, ...amountOnly]), ...allergensByWord(full)];
     if (tagged.some((a) => banned.has(a))) continue;
-    if (breaksDiet(d, keys, diet)) continue;
+    if (breaksDiet(full, keys, diet)) continue;
     const t = totalsOf(draft.form.ingredients);
     const y = Math.max(1, d.servings);
     out.push({
