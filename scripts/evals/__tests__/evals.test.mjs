@@ -388,8 +388,9 @@ test('the live floor is on import-corpus, kitchen-allergens and ask-answers ONLY
   assert.equal(baselines['kitchen-allergens'].passed, 31);
   // Sprint 4a (PO 11-18): live typed path = coach-interpret 949 of 1158; 38 losses shipped by name, each with the PO's decision.
   assert.equal(baselines['ask-answers'].passed, 949);
-  assert.equal(baselines['ask-answers'].accepted.length, 38);
-  for (const a of baselines['ask-answers'].accepted) assert.match(a.po, /^PO 2026-11-18/);
+  // + 3 judgment calls accepted by the PO 11-19 (Holt Listens: "mid 20s", "at my office", "lower back is tight").
+  assert.equal(baselines['ask-answers'].accepted.length, 41);
+  for (const a of baselines['ask-answers'].accepted) assert.match(a.po, /^PO 2026-11-(18|19)/);
   assert.equal(baselines['import-corpus'].accepted, undefined, 'no accepted losses on import');
   assert.equal(baselines['kitchen-allergens'].accepted, undefined, 'no accepted losses on Kitchen');
 });

@@ -38,6 +38,27 @@ const GEAR: readonly (readonly [RegExp, readonly string[]])[] = [
   [/\b(gymnastic rings|rings)\b/i, ['rings']],
   [/\b(medicine ball|med ball|slam ball)\b/i, ['medball']],
   [/\b(yoga mat|exercise mat|mat)\b/i, ['mat']],
+  // PO 11-19 ("what's in your home gym?"): the rest of the Home Gym list, named the way people say them.
+  [/\b(cables?|cable (machine|station|tower|column)|functional trainer)\b/i, ['cable']],
+  [/\blat ?pull-? ?downs?( machine)?\b/i, ['latpulldown']],
+  [/\bleg press\b/i, ['legpress']],
+  [/\bleg (curl|extension)s?( machine)?\b/i, ['legmachine']],
+  [/\bsmith( machine)?\b/i, ['smith']],
+  [/\b(ez ?-?bar|curl bar)\b/i, ['ezbar']],
+  [/\b(trap bar|hex bar)\b/i, ['trapbar']],
+  [/\bplates\b/i, ['plates']],
+  [/\bdip (bar|bars|station)\b/i, ['dip']],
+  [/\b(plyo ?box|jump box)\b/i, ['plyobox']],
+  [/\b(rower|rowing machine|concept ?2|erg)\b/i, ['rower']],
+  [/\b(peloton|spin bike|stationary bike|exercise bike|indoor bike|bike trainer)\b/i, ['bike']],
+  [/\b(assault bike|air ?bike|echo bike|fan bike)\b/i, ['airbike']],
+  [/\btreadmill\b/i, ['treadmill']],
+  [/\belliptical\b/i, ['elliptical']],
+  [/\b(jump ?rope|skipping rope)\b/i, ['jumprope']],
+  [/\bsand ?bag\b/i, ['sandbag']],
+  [/\bweight(ed)? vest\b/i, ['weightvest']],
+  [/\b(ab wheel|ab roller)\b/i, ['abwheel']],
+  [/\bfoam roller\b/i, ['foamroller']],
 ];
 
 /** A gym they train AT, not a home gym: the model's `full_gym` is the right answer there, not a list. */

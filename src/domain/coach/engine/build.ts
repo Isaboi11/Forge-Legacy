@@ -19,7 +19,8 @@ import { AI_DECLINED_HOLT } from '../../consent/consent.ts';
 import { withNotCharged } from '../../ai/ai-call.ts';
 import { holtSpendVerdict, holtUncapped } from '../../entitlement/caps-core.ts';
 import type { CapKey } from '../../entitlement/caps-core.ts';
-import { canDoExercise } from '../../home-gym/equipment.ts';
+import { canDoExercise, homeGymItem } from '../../home-gym/equipment.ts';
+import { typedEquipment } from '../typed-equipment.ts';
 import { earnsStructuredDevelopmentCredit } from '../../program/progress-core.ts';
 import { draftFromStructure } from '../../../lib/program-draft-model.ts';
 import { assemble } from '../assemble.ts';
@@ -81,6 +82,13 @@ export interface BuildHooks {
 }
 
 /** The catalogue by key — `itemByKey` on the phone, built once per catalogue. */
+export const SET_UP_HOME_GYM = 'Set up my home gym';
+export const EDIT_HOME_GYM = 'Edit my home gym';
+const labelList = (xs: string[]) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+/** The home gym a build uses, named once (PO 11-19: "show me the equipment I have in there already"). */
+export const kitLine = (ids: readonly string[]): string =>
+  `Building around your home gym: ${labelList(ids.map((id) => (homeGymItem(id)?.label ?? id).toLowerCase()))}. Got something new? Tell me, or edit it below.`;
+
 const indexes = new WeakMap<readonly CatalogExercise[], Map<string, CatalogExercise>>();
 function keyed(catalog: readonly CatalogExercise[]): (key: string) => CatalogExercise | undefined {
   let ix = indexes.get(catalog);
@@ -186,10 +194,38 @@ export async function advance(
        hardcoded line did ("Good. What are you training for?"), now varied so it does not become the
          tic that makes him sound like a script. */
       /* AI lane: asked in words, the choices named inline, nothing to tap — the answer is typed (or spoken). */
-      if (q && hooks.lane === 'ai') sink.say({ kind: 'holt', text: `${lead ?? pick('ack', port.choose)} ${askInWords(q)}` });
-      else if (q) sink.say({ kind: 'holt', text: `${lead ?? pick('ack', port.choose)} ${q.ask}` }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+      /* PO 11-19: "what's in your home gym?" sits beside the Home Gym screen, and its answer is saved there. */
+      const gear = q?.id === 'gear';
+      if (gear) refs.kitAsked = true;
+      const toHomeGym = gear ? [{ label: SET_UP_HOME_GYM, patch: {}, goTo: '/home-gym' }] : [];
+      if (q && hooks.lane === 'ai') {
+        sink.say({ kind: 'holt', text: `${lead ?? pick('ack', port.choose)} ${askInWords(q)}` }, ...(gear ? [{ kind: 'chips' as const, chips: toHomeGym }] : []));
+      } else if (q) sink.say({ kind: 'holt', text: `${lead ?? pick('ack', port.choose)} ${q.ask}` }, { kind: 'chips', chips: [...q.chips, ...toHomeGym], ctl: q.ctl });
       return;
     }
+    /*
+     * ══ A HOME GYM IS BUILT FROM WHAT IS IN IT (PO 11-19) ══ "If I say home gym it should prompt me to add the
+     * equipment, or show me the equipment I have in there already — and build just around that."
+     *   · nothing on file → the gear question (`needsGear`) asks what is in it, with the Home Gym screen beside it,
+     *     and nothing is built from a guessed kit;
+     *   · on file → he names it once before building, with a way to change it;
+     *   · what they typed is saved to their home gym, so it is never asked again.
+     */
+    if (mode_ !== 'pick' && merged.environment === 'home') {
+      const kit = merged.ownedEquipment ?? [];
+      /* A kit named in THIS request ("hotel gym today, just dumbbells") is that request's — not "your home gym", and
+         not saved. Only the answer to his question is saved. */
+      const saidKit = refs.typed.some((t) => (typedEquipment(t)?.ownedEquipment?.length ?? 0) > 0);
+      if (kit.length && refs.kitAsked && !refs.kitShown) void port.memory.addEquipment(kit).catch(() => undefined);
+      if (kit.length && !refs.kitShown && (refs.kitAsked || !saidKit)) {
+        refs.kitShown = true;
+        sink.say(
+          { kind: 'holt', text: kitLine(kit) },
+          { kind: 'chips', chips: [{ label: EDIT_HOME_GYM, patch: {}, goTo: '/home-gym' }] },
+        );
+      }
+    }
+
     /* What he assumed for this request, said once, before he builds it (AI lane). */
     const assumedSaid = mode_ !== 'pick' ? assumedLine(refs.assumed) : null;
     if (assumedSaid) {

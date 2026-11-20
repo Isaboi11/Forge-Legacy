@@ -201,7 +201,7 @@ import { useProfile } from '@/lib/profile';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { checkActiveProgram, fetchActiveProgram } from '@/data/programs-live';
-import { fetchCoachProfile } from '@/data/coach-profile-live';
+import { fetchCoachProfile, saveProfileEnvironment } from '@/data/coach-profile-live';
 import { endThread, hasMetHolt, loadThread, loadThreadPlace, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { PAST_CHATS_ROUTE } from '@/domain/coach/holt-memory';
@@ -1056,6 +1056,8 @@ export function CoachChatSheet({
   const keepRoom = (env: Room) => {
     engine.current.room = env;
     void rememberRoom(env);
+    /* PO 11-19: the profile's too — the web, another phone and the wizard read it, and nobody is asked twice. */
+    void saveProfileEnvironment(env);
   };
 
   const tapChip = (chip: Chip, echo = true) => {

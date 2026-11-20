@@ -121,6 +121,31 @@ export async function saveProfileExperience(level: Experience): Promise<boolean>
   }
 }
 
+/**
+ * WHERE THEY TRAIN, SAVED TO THE PROFILE (PO 11-19: "he asks me where I train — I already answered that").
+ *
+ * A room learned in Holt's chat used to live on the device only (`rememberRoom`), so the web, a new phone or the wizard
+ * asked again, and onboarding's own answer (`profiles.environment`) never heard it. Written in the profile's words;
+ * a profile that already says the same room ("dumbbells_only" is a home) is left as it is. Never throws.
+ */
+export async function saveProfileEnvironment(room: Environment): Promise<boolean> {
+  const value: ProfileEnvironment | null = room === 'full_gym' ? 'commercial_gym' : room === 'home' ? 'home_gym' : room === 'bodyweight' ? 'bodyweight' : null;
+  if (!value) return false;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { data } = await supabase.from('profiles').select('environment').eq('id', user.id).maybeSingle();
+    const now = (data as { environment: string | null } | null)?.environment ?? null;
+    if (now && PROFILE_ENVIRONMENTS.includes(now) && coachEnvironmentFor(now as ProfileEnvironment) === room) return true;
+    const { error } = await supabase.from('profiles').update({ environment: value }).eq('id', user.id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 /** Just the level — `fetchCoachProfile().experience` without the rest of the row. Null on any failure. */
 export async function fetchProfileExperience(): Promise<Experience | null> {
   try {
