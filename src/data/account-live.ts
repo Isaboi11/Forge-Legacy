@@ -36,8 +36,12 @@ import { storagePathOf } from '@/data/media-cleanup-live';
  * tracked; it does not belong in the path of somebody trying to delete their account.
  */
 
-/** Buckets whose objects are keyed under the athlete's own id, and can be listed and removed by prefix. */
-const OWNED_PREFIX_BUCKETS = ['avatars', 'media'] as const;
+/**
+ * Buckets whose objects are keyed under the athlete's own id, and can be listed and removed by prefix.
+ * `form-frames` (AI re-audit 11-20): the marked frame of each saved form check, `form-frames/<uid>/<id>.jpg` — a
+ * picture of the athlete. It was never here, so it outlived the account. 0221 gives the owner a delete policy.
+ */
+const OWNED_PREFIX_BUCKETS = ['avatars', 'media', 'form-frames'] as const;
 
 async function removeOwnedObjects(bucket: string, prefix: string): Promise<number> {
   try {
